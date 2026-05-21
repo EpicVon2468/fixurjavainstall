@@ -371,9 +371,9 @@ dependencies = [
 
 [[package]]
 name = "either"
-version = "1.15.0"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
+checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
 
 [[package]]
 name = "encode_unicode"
@@ -798,7 +798,7 @@ dependencies = [
 [[package]]
 name = "mavity-tui-components"
 version = "0.0.0"
-source = "git+https://github.com/EpicVon2468/mavity-tui-components/#d96c160ab2c201f97dff9bcc04ec57b258ecb8d4"
+source = "git+https://github.com/EpicVon2468/mavity-tui-components/#a6c9397fef0b8e0a5d28d17337428f6f6ad1c6cd"
 dependencies = [
  "crossterm",
  "ratatui-core",
@@ -932,9 +932,9 @@ dependencies = [
 
 [[package]]
 name = "pulldown-cmark"
-version = "0.13.3"
+version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c3a14896dfa883796f1cb410461aef38810ea05f2b2c33c5aded3649095fdad"
+checksum = "e9f068eba8e7071c5f9511831b44f32c740d5adf574e990f946ddb53db2f314e"
 dependencies = [
  "bitflags",
  "memchr",
@@ -1031,7 +1031,7 @@ dependencies = [
 [[package]]
 name = "ring"
 version = "0.17.16000"
-source = "git+https://github.com/briansmith/ring#5b2ad97ccc0b1b6a091ad4a7848bf5ce9782e6d0"
+source = "git+https://github.com/briansmith/ring#b8d24b40d8df55e12a0c64a4d2fc877ac3002540"
 dependencies = [
  "cc",
  "cfg-if",

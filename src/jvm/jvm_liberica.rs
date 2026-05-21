@@ -35,7 +35,7 @@ pub fn get_liberica_download(
 		log_err!(
 			"The requested JVM is marked as End Of Life!  Consider upgrading to a newer version!"
 		);
-		require_intentional("selected a JVM which is marked as End Of Life!")?;
+		require_intentional("requested a JVM which is marked as End Of Life!")?;
 	};
 	Ok(the_one.downloadUrl.clone())
 }

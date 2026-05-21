@@ -1,4 +1,4 @@
-use anyhow::{Context as _, Result};
+use anyhow::Result;
 
 use crate::cli::{FujiCmd, Software};
 use crate::cmd_manage::cmd_manage;
@@ -35,7 +35,7 @@ fn preset_recommended(minimal: bool) -> Result<()> {
 	if minimal {
 		features.push(Feature::Minimal);
 	};
-	configure_fast(&mut features)?;
+	configure_fast(&mut features);
 	features.push(Feature::Kotlin);
 	features.push(Feature::FontFix);
 	do_preset(JVM::JBR, features, MajorVersion::LTS)
@@ -43,33 +43,17 @@ fn preset_recommended(minimal: bool) -> Result<()> {
 
 fn preset_fast(minimal: bool) -> Result<()> {
 	let mut features: Vec<Feature> = features(minimal);
-	configure_fast(&mut features)?;
+	configure_fast(&mut features);
 	do_preset(JVM::JBR, features, MajorVersion::LTS)
 }
 
-fn configure_fast(features: &mut Vec<Feature>) -> Result<()> {
+fn configure_fast(features: &mut Vec<Feature>) {
 	features.push(Feature::JEP519);
 	#[cfg(target_os = "linux")]
 	{
-		use std::fs::{DirEntry, ReadDir};
-		use std::path::Path;
+		use crate::commands::{is_nvidia, is_wayland};
 
-		use crate::commands::is_wayland;
-		use crate::io_failure;
-
-		let path: &str = "/proc/driver";
-		let mut dir: ReadDir = Path::new(path)
-			.read_dir()
-			.with_context(|| io_failure!(path, "list directory"))?;
-		if dir.any(|entry: std::io::Result<DirEntry>| {
-			entry
-				.expect("Couldn't check for NVIDIA drivers!")
-				.file_name()
-				.to_ascii_uppercase()
-				.to_str()
-				.unwrap()
-				.contains("NVIDIA")
-		}) {
+		if is_nvidia() {
 			features.push(Feature::NVIDIA);
 		};
 
@@ -86,7 +70,6 @@ fn configure_fast(features: &mut Vec<Feature>) -> Result<()> {
 	features.push(Feature::Metal);
 	#[cfg(windows)]
 	features.push(Feature::OpenGL);
-	Ok(())
 }
 
 fn preset_latest(minimal: bool) -> Result<()> {

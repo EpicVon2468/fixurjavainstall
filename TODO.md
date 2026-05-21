@@ -59,3 +59,4 @@
   - Either way, make sure to manually restore the licence header to the converted files, as `pandoc` seems to trim it...
   - What happens as relates to Java Platform, Standard Edition's licence?
 - [ ] Fix CI/CD publishing being broken
+- [ ] Find a way to cut down on the 1.4 (cargo says 1.8, no other program agrees) GB build directory

@@ -1,5 +1,4 @@
 use std::cmp::min;
-use std::env::var;
 use std::fmt::Write;
 use std::fs::{File, create_dir_all};
 use std::hint::cold_path;
@@ -257,7 +256,7 @@ pub fn update_perms(path: &Path, mode: Option<u32>, is_dir: bool) -> Result<()> 
 	use std::fs::{Permissions, set_permissions};
 	use std::os::unix::fs::PermissionsExt as _;
 
-	let new_mode: u32 = if mode.is_some_and(is_executable) || is_dir {
+	let new_mode: u32 = if is_dir || mode.is_some_and(is_executable) {
 		// rwxr-xr-x
 		0o755
 	} else {
@@ -368,16 +367,47 @@ pub fn progress_bar(len: u64) -> ProgressBar {
 #[macro_export]
 macro_rules! io_failure {
 	($dest:expr, $msg:expr $(,)?) => {
-		format!("Couldn't {} path '{}'!", $msg, $dest,)
+		format!("Couldn't {} path '{}'!", $msg, $dest)
 	};
 }
 
 #[must_use]
 #[cfg(target_os = "linux")]
 pub fn is_wayland() -> bool {
+	use std::env::var;
+	use std::hint::unlikely;
+
 	has_program("wayland-info")
-		|| var("WAYLAND_DISPLAY").is_ok()
-		|| var("XDG_SESSION_TYPE").is_ok_and(|var: String| var == "wayland")
+		// This variable seems to be unset when you su to root.
+		// But again, not impossible to be true, so leave it in.
+		|| unlikely(var("WAYLAND_DISPLAY").is_ok())
+		// When you su to root, XDG_SESSION_TYPE generally gets set to be `tty`.
+		// It's incredibly unlikely (but not impossible) that this would be true.
+		|| unlikely(var("XDG_SESSION_TYPE").is_ok_and(|var: String| unlikely(var == "wayland")))
+}
+
+#[must_use]
+#[cfg(target_os = "linux")]
+pub fn is_nvidia() -> bool {
+	use std::fs::{DirEntry, ReadDir, read_dir};
+
+	let Ok(mut dir): std::io::Result<ReadDir> = read_dir("/proc/driver") else {
+		return false;
+	};
+
+	if dir.any(|entry: std::io::Result<DirEntry>| {
+		entry.is_ok_and(|entry: DirEntry| {
+			entry
+				.file_name()
+				.to_ascii_lowercase()
+				.to_string_lossy()
+				.contains("nvidia")
+		})
+	}) {
+		return true;
+	};
+
+	false
 }
 
 #[cfg(target_os = "linux")]
@@ -411,8 +441,9 @@ pub fn require_intentional(message: &str) -> Result<()> {
 	Ok(())
 }
 
-#[expect(unused_variables)]
+#[inline(always)]
+#[expect(clippy::inline_always)]
 #[cfg(not(feature = "interactive"))]
-pub const fn require_intentional(message: &str) -> Result<()> {
+pub const fn require_intentional(_message: &str) -> Result<()> {
 	Ok(())
 }

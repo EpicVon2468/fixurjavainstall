@@ -51,7 +51,7 @@ macro_rules! os_name {
 	() => {
 		$crate::os_name!(macOS = "osx")
 	};
-	(macOS = $mac_os:expr) => {
+	(macOS = $mac_os:expr $(,)?) => {
 		cfg_select! {
 			windows => "windows",
 			target_os = "linux" => "linux",

@@ -25,6 +25,7 @@ categories = [
 ]
 exclude = [
 	".github/",
+	"apparmour/",
 	"listing/",
 	"apple/",
 	"man/",

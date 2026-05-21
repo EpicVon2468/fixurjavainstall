@@ -2,6 +2,7 @@ use clap::ValueEnum;
 
 // TODO: start-on-first-thread macOS (the LWJGL fix that breaks AWT/Swing)
 #[non_exhaustive]
+#[derive(Debug)]
 #[derive_const(ValueEnum, Clone, PartialEq, Eq)]
 pub enum Feature {
 	/// Minimal JVM (JRE or no-Javadoc JDK).
