@@ -24,6 +24,7 @@ pub enum Feature {
 	/// See also:
 	///
 	/// - <https://openjdk.org/jeps/534>.
+	///
 	/// - <https://openjdk.org/projects/lilliput/>.
 	#[value(name = "jep-519", alias = "compact-object-headers")]
 	JEP519,
@@ -53,6 +54,7 @@ pub enum Feature {
 	/// See also:
 	///
 	/// - <https://openjdk.org/jeps/382>.
+	///
 	/// - <https://openjdk.org/projects/lanai/>.
 	#[cfg(target_os = "macos")]
 	#[value(alias = "lanai")]
@@ -77,7 +79,9 @@ pub enum Feature {
 	/// See also:
 	///
 	/// - <https://inside.java/2024/12/09/quality-heads-up/>.
+	///
 	/// - <https://docs.oracle.com/en/java/javase/26/core/restricted-methods.html>.
+	///
 	/// - <https://openjdk.org/projects/panama/>.
 	#[cfg(feature = "openjdk-restricted")]
 	#[value(alias = "allow-native")]
@@ -112,7 +116,7 @@ pub enum Feature {
 	FontFix,
 	/// General fixes for NVIDIA GPUs on Linux.
 	///
-	/// Rendering may not work correctly or even at all without these.
+	/// Rendering may not work correctly (or even at all) for NVIDIA GPUs on Linux without this.
 	#[cfg(target_os = "linux")]
 	NVIDIA,
 	/// MUSL libc support – <https://musl.libc.org/>.

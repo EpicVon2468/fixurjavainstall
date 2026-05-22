@@ -725,7 +725,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 [[package]]
 name = "kasuari"
 version = "0.4.12"
-source = "git+https://github.com/ratatui/kasuari?rev=8c75fa3#8c75fa38ddd2573d3343d8ec4a1541269ecf2dc3"
+source = "git+https://github.com/ratatui/kasuari?rev=b19274d#b19274de9f9fbe1c8f30debb0026807ff1c6c976"
 dependencies = [
  "hashbrown 0.17.1",
  "portable-atomic",
@@ -1160,9 +1160,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.149"
+version = "1.0.150"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
+checksum = "e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9"
 dependencies = [
  "itoa",
  "memchr",
@@ -1832,9 +1832,9 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "8.6.0"
+version = "9.0.0-pre2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d04a6b5381502aa6087c94c669499eb1602eb9c5e8198e534de571f7154809b"
+checksum = "cb30735adb9a33cbbb12950b940e1d105389e275ba8fa7118c385d9cffc4cec1"
 dependencies = [
  "crc32fast",
  "flate2",

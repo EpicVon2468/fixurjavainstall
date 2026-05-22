@@ -123,7 +123,7 @@ impl FujiApp {
 		}
 	}
 
-	/// See also: [`Component::propagate_events`][`crate::tui::component::Component::propagate_events`].
+	/// See also: [`Component::propagate_events`][`mtc::Component::propagate_events`].
 	fn propagate_events(&mut self) {
 		// SAFETY:
 		// Problem(s):

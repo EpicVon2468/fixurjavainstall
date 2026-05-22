@@ -215,7 +215,7 @@ pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 ///
 /// Error value(s):
 ///
-/// * If [`FujiArgs::command`][`field@FujiArgs::command`] is [`Some`]:
+/// * If [`FujiArgs::command`] is [`Some`]:
 /// 	* Propagated up from the following functions (if they are called):
 /// 		* [`cmd_link`][`cmd_link()`]
 /// 		* [`cmd_manage`][`cmd_manage()`]
@@ -227,8 +227,8 @@ pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 ///
 /// Return value(s):
 ///
-/// * If [`FujiArgs::command`][`field@FujiArgs::command`] is [`None`]: [`Ok`]
-/// * If [`FujiArgs::command`][`field@FujiArgs::command`] is [`Some`]:
+/// * If [`FujiArgs::command`] is [`None`]: [`Ok`]
+/// * If [`FujiArgs::command`] is [`Some`]:
 /// 	* Propagated up from the following functions (if they are called):
 /// 		* [`cmd_link`][`cmd_link()`]
 /// 		* [`cmd_manage`][`cmd_manage()`]
@@ -244,6 +244,8 @@ pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 ///
 /// assert_eq!(entrypoint(FujiArgs::parse()), Ok(()));
 /// ```
+///
+/// [`FujiArgs::command`]: field@FujiArgs::command
 pub fn entrypoint(args: FujiArgs) -> Result<()> {
 	unsafe_checks()?;
 	let lock: File = claim_singleton_process()?;
@@ -303,11 +305,11 @@ fn unsafe_checks() -> Result<()> {
 			///
 			/// # See Also
 			///
-			/// - [getuid(2)](https://man7.org/linux/man-pages/man2/getuid.2.html).
-			/// - [getresuid(2)](https://man7.org/linux/man-pages/man2/getresuid.2.html).
-			/// - [setreuid(2)](https://man7.org/linux/man-pages/man2/setreuid.2.html).
-			/// - [setuid(2)](https://man7.org/linux/man-pages/man2/setuid.2.html).
-			/// - [credentials(7)](https://man7.org/linux/man-pages/man7/credentials.7.html).
+			/// - [getuid(2)].
+			/// - [getresuid(2)].
+			/// - [setreuid(2)].
+			/// - [setuid(2)].
+			/// - [credentials(7)].
 			///
 			/// ---
 			///
@@ -316,6 +318,12 @@ fn unsafe_checks() -> Result<()> {
 			///
 			/// uid_t geteuid(void);
 			/// ```
+			///
+			/// [getuid(2)]: https://man7.org/linux/man-pages/man2/getuid.2.html
+			/// [getresuid(2)]: https://man7.org/linux/man-pages/man2/getresuid.2.html
+			/// [setreuid(2)]: https://man7.org/linux/man-pages/man2/setreuid.2.html
+			/// [setuid(2)]: https://man7.org/linux/man-pages/man2/setuid.2.html
+			/// [credentials(7)]: https://man7.org/linux/man-pages/man7/credentials.7.html
 			fn geteuid() -> u32;
 		}
 

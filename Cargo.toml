@@ -171,7 +171,7 @@ features = [
 default-features = false
 
 [dependencies.zip]
-version = ">=8.6.0, <9"
+version = ">=9.0.0-pre2, <10"
 features = [
 	"deflate-flate2",
 ]
@@ -186,7 +186,7 @@ ring = {
 }
 kasuari = {
 	git = "https://github.com/ratatui/kasuari",
-	rev = "8c75fa3",
+	rev = "b19274d",
 }
 
 [package.metadata.dist]

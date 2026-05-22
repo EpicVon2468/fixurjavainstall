@@ -395,7 +395,7 @@ pub fn is_nvidia() -> bool {
 		return false;
 	};
 
-	if dir.any(|entry: std::io::Result<DirEntry>| {
+	dir.any(|entry: std::io::Result<DirEntry>| {
 		entry.is_ok_and(|entry: DirEntry| {
 			entry
 				.file_name()
@@ -403,11 +403,7 @@ pub fn is_nvidia() -> bool {
 				.to_string_lossy()
 				.contains("nvidia")
 		})
-	}) {
-		return true;
-	};
-
-	false
+	})
 }
 
 #[cfg(target_os = "linux")]

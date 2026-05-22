@@ -19,9 +19,6 @@ pub fn cmd_man(cmd: FujiCmd) -> Result<()> {
 		wrong_cmd!(cmd_man);
 	};
 	let dir: &Path = &man_dir.join("man8");
-	if exists!(dir) {
-		remove_dir_all(dir).context("remove_dir_all")?;
-	};
 	if !exists!(dir) {
 		create_dir_all(dir).context("create_dir_all")?;
 	};
@@ -38,7 +35,17 @@ fn dump_manual(cmd: Command, out_dir: &Path) -> Result<()> {
 			generate(child, out_dir)?;
 		}
 
-		let man: Man = Man::new(parent.clone()).section("8").date("2026-04-20");
+		let man: Man = Man::new(parent.clone())
+			.section("8")
+			.date("2026-05-22")
+			.source(concat!("fuji ", env!("CARGO_PKG_VERSION")))
+			// All capitalised is the convention for commands
+			.title(
+				parent
+					.get_display_name()
+					.unwrap_or_else(|| parent.get_name())
+					.to_ascii_uppercase(),
+			);
 
 		let mut output: GzEncoder<File> = GzEncoder::new(
 			File::create_new(out_dir.join(man.get_filename()).with_added_extension("gz"))
