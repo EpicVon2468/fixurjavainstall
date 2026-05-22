@@ -29,6 +29,9 @@ fuji --help
 
 For UNIX `man` entries:
 
+An additional note: If the version of `fuji` you have installed is <= `0.8.0`, DO NOT RUN `fuji manual`!!!<br>
+See also: [GHSA-fq3w-p4fg-mw73](https://github.com/EpicVon2468/fixurjavainstall/security/advisories/GHSA-fq3w-p4fg-mw73).
+
 ```shell
 # if compiled with `--features dev` (installs to "$PWD/man", only works as long as "$PWD/man" is on the manpath)
 fuji manual && export MANPATH="$PWD/man:$(manpath)"

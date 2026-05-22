@@ -1,4 +1,4 @@
-use std::fs::{File, create_dir_all, remove_dir_all};
+use std::fs::{File, create_dir_all};
 use std::io::Write as _;
 use std::iter::Filter;
 use std::path::Path;
@@ -18,11 +18,11 @@ pub fn cmd_man(cmd: FujiCmd) -> Result<()> {
 	let FujiCmd::Manual { man_dir }: FujiCmd = cmd else {
 		wrong_cmd!(cmd_man);
 	};
-	let dir: &Path = &man_dir.join("man8");
-	if !exists!(dir) {
-		create_dir_all(dir).context("create_dir_all")?;
+	let man8_dir: &Path = &man_dir.join("man8");
+	if !exists!(man8_dir) {
+		create_dir_all(man8_dir).context("create_dir_all")?;
 	};
-	dump_manual(FujiArgs::command(), dir)
+	dump_manual(FujiArgs::command(), man8_dir)
 }
 
 // Based off clap_mangen::generate_to
