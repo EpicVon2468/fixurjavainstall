@@ -51,19 +51,11 @@ impl FujiApp {
 
 	/// # Safety
 	///
-	/// Callers ensure the safe use of this pointer.<br>
-	/// As this method is private, no untrusted callers are able to access this method.
-	const unsafe fn page(&self) -> *mut BoxPage<Self> {
-		self.page
-	}
-
-	/// # Safety
-	///
 	/// You must always call [`Self::set_page`] before the value returned by this method goes out-of-scope (as such, this method cannot not be called safely without `&mut self` being available).
 	///
 	/// The value which is passed to the [`Self::set_page`] is irrelevant – the only requirement is that _some value_ is restored via [`Self::set_page`] before the value returned by this method goes out-of-scope.
 	///
-	/// Failure to do so means that the underlying value of [`Self::page`] will be automagically [`dropped`][`std::mem::drop`] by Rust.
+	/// Failure to do so means that the underlying value of the pointer will be automagically [`dropped`][`std::mem::drop`] by Rust.
 	///
 	/// This can lead to:
 	///
@@ -78,15 +70,9 @@ impl FujiApp {
 		// Problem(s):
 		// - Pointers are unsafe.
 		// Excuse(s):
-		// - See below.
-		let ptr: *mut BoxPage<Self> = unsafe { self.page() };
-		// SAFETY:
-		// Problem(s):
-		// - Pointers are unsafe.
-		// Excuse(s):
 		// - This method is only invoked by trusted callers in a safe manner.
 		// - Both this method and the underlying struct field are private and cannot be unexpectedly mutated.
-		unsafe { ptr.read() }
+		unsafe { self.page.read() }
 	}
 
 	// &mut isn't actually needed, but it's a good sanity check to avoid 'unexpected' mutation
@@ -95,17 +81,11 @@ impl FujiApp {
 		// Problem(s):
 		// - Pointers are unsafe.
 		// Excuse(s):
-		// - See below.
-		let ptr: *mut BoxPage<Self> = unsafe { self.page() };
-		// SAFETY:
-		// Problem(s):
-		// - Pointers are unsafe.
-		// Excuse(s):
 		// - This method is only invoked by trusted callers in a safe manner.
 		// - Both this method and the underlying struct field are private and cannot be unexpectedly mutated.
 		// - Mutations of [`Self::page`] are not inherently unsafe, and may be performed without consequence.
 		unsafe {
-			ptr.write(value);
+			self.page.write(value);
 		};
 	}
 }
