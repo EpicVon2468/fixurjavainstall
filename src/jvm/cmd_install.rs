@@ -15,7 +15,7 @@ use crate::jvm::major_version::MajorVersion;
 use crate::jvm::wrapper::{gen_wrapper, install_wrapper};
 use crate::jvm::{JavaVersion, Op};
 use crate::link::{link, symlink_link};
-use crate::{FUJI_DIR, LINK_DIR, compiler_unreachable, exists, io_failure, wrong_cmd};
+use crate::{FUJI_DIR, LINK_DIR, exists, io_failure, wrong_cmd};
 
 pub fn cmd_install(op: Op) -> Result<()> {
 	#[rustfmt::skip]
@@ -61,14 +61,12 @@ pub fn cmd_install(op: Op) -> Result<()> {
 	if !dry_run {
 		clean_java_home(java_home).context("Couldn't clean JAVA_HOME!")?;
 	};
-	#[allow(unreachable_patterns)]
 	let download_jvm: DownloadJVMFn = match jvm {
 		JVM::Auto => todo!(),
 		JVM::JBR => download_jbr,
 		JVM::JavaSE => download_java_se,
 		JVM::Temurin => download_temurin,
 		JVM::Liberica => download_liberica,
-		_ => compiler_unreachable!(),
 	};
 	#[rustfmt::skip]
 	download_jvm(DownloadJVMArgs {

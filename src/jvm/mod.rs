@@ -40,7 +40,7 @@ use crate::install_method::InstallMethod;
 use crate::jvm::feature::Feature;
 use crate::jvm::jvm::JVM;
 use crate::jvm::major_version::MajorVersion;
-use crate::{compiler_unreachable, wrong_cmd};
+use crate::wrong_cmd;
 
 #[non_exhaustive]
 #[derive_const(Subcommand)]
@@ -116,12 +116,10 @@ pub fn manage_jvm(software: Software) -> Result<()> {
 	let Software::JVM { op }: Software = software else {
 		wrong_cmd!(manage_jvm);
 	};
-	#[allow(unreachable_patterns)]
 	match op {
 		Op::Install { .. } => cmd_install::cmd_install(op).context("Couldn't install JVM!"),
 		Op::Remove => todo!("fuji-jvm remove"),
 		Op::Preset { .. } => cmd_preset::cmd_preset(op).context("Couldn't install JVM preset!"),
-		_ => compiler_unreachable!(),
 	}
 }
 

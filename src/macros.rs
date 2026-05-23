@@ -119,16 +119,6 @@ macro_rules! matches_many {
 }
 
 #[macro_export]
-macro_rules! compiler_unreachable {
-	() => {{
-		// SAFETY: It isn't possible for this block of code to be reached.
-		unsafe {
-			std::hint::unreachable_unchecked();
-		};
-	}};
-}
-
-#[macro_export]
 macro_rules! value_enum_extensions {
 	($name:ty $(,)?) => {
 		$crate::value_enum_extensions!(

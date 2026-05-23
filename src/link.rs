@@ -11,7 +11,7 @@ use indicatif::ProgressBar;
 use crate::commands::{has_program, progress_bar};
 use crate::env_util::add_to_path;
 use crate::install_method::InstallMethod;
-use crate::{compiler_unreachable, exists, io_failure, wait_and_check_status};
+use crate::{exists, io_failure, wait_and_check_status};
 
 pub fn link<P: AsRef<Path>, S: AsRef<Path>>(
 	path: P,
@@ -64,7 +64,7 @@ fn link_(path: &Path, link_dir: &Path, install_method: &InstallMethod) -> Result
 				symlink_link(file, dest).context("Couldn't link with symlink!"),
 			InstallMethod::UpdateAlternatives =>
 				debian_link(file, filename, dest).context("Couldn't link with update-alternatives!"),
-			_ => compiler_unreachable!(),
+			_ => unreachable!(),
 		}?;
 		progress = min(progress + metadata.len(), max_len);
 		pb.set_position(progress);
