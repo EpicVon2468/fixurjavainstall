@@ -69,7 +69,6 @@
 #![doc = include_str!("../README.md")]
 pub mod arch;
 pub mod cli;
-pub mod cmd_link;
 pub mod cmd_man;
 pub mod cmd_manage;
 pub mod commands;
@@ -78,6 +77,7 @@ pub mod fuji_value_enum;
 pub mod install_method;
 pub mod jvm;
 pub mod kotlin;
+pub mod link;
 pub mod macros;
 #[cfg(feature = "tui")]
 pub mod tui;
@@ -94,8 +94,6 @@ use anyhow::{Context as _, Result};
 use clap::Parser as _;
 
 use crate::cli::{FujiArgs, FujiCmd};
-#[cfg(not(windows))]
-use crate::cmd_link::cmd_link;
 use crate::cmd_man::cmd_man;
 use crate::cmd_manage::cmd_manage;
 use crate::commands::require_intentional;
@@ -247,13 +245,11 @@ pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 ///
 /// [`FujiArgs::command`]: field@FujiArgs::command
 pub fn entrypoint(args: FujiArgs) -> Result<()> {
-	unsafe_checks()?;
+	flight_checks()?;
 	let lock: File = claim_singleton_process()?;
 	let result: Result<()> = args.command.map_or_else(
 		|| Ok(()),
 		|command: FujiCmd| match command {
-			#[cfg(not(windows))]
-			FujiCmd::Link { .. } => cmd_link(command),
 			FujiCmd::Manage { .. } => cmd_manage(command),
 			FujiCmd::Manual { .. } => cmd_man(command),
 		},
@@ -263,7 +259,7 @@ pub fn entrypoint(args: FujiArgs) -> Result<()> {
 }
 
 #[allow(clippy::unnecessary_wraps)]
-fn unsafe_checks() -> Result<()> {
+fn flight_checks() -> Result<()> {
 	#[cfg(feature = "dev")]
 	// SAFETY:
 	// Problem(s):
@@ -284,6 +280,7 @@ fn unsafe_checks() -> Result<()> {
 		use std::hint::unlikely;
 
 		// SAFETY: The function declarations given below are in line with the header files of `libc`.
+		#[link(name = "c")]
 		unsafe extern "C" {
 
 			/// `geteuid()` - get user identity.

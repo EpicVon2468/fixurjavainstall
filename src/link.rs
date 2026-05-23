@@ -8,40 +8,20 @@ use anyhow::{Context as _, Result, bail};
 
 use indicatif::ProgressBar;
 
-use crate::cli::FujiCmd;
 use crate::commands::{has_program, progress_bar};
 use crate::env_util::add_to_path;
 use crate::install_method::InstallMethod;
-use crate::{compiler_unreachable, exists, io_failure, wait_and_check_status, wrong_cmd};
+use crate::{compiler_unreachable, exists, io_failure, wait_and_check_status};
 
-#[cfg(not(windows))]
-pub fn cmd_link(command: FujiCmd) -> Result<()> {
-	#[rustfmt::skip]
-	let FujiCmd::Link {
-		paths,
-		link_dir,
-		install_method,
-	}: FujiCmd = command else {
-		wrong_cmd!(cmd_link);
-	};
-	for path in paths {
-		println!("Linking {}...", path.display());
-		link_impl(&path, &link_dir, &install_method)
-			.with_context(|| format!("Failed to link '{}'!", path.display()))?;
-		println!("Done.\n");
-	}
-	Ok(())
-}
-
-pub fn link_impl<P: AsRef<Path>, S: AsRef<Path>>(
+pub fn link<P: AsRef<Path>, S: AsRef<Path>>(
 	path: P,
 	link_dir: S,
 	install_method: &InstallMethod,
 ) -> Result<()> {
-	link_impl_(path.as_ref(), link_dir.as_ref(), install_method)
+	link_(path.as_ref(), link_dir.as_ref(), install_method)
 }
 
-fn link_impl_(path: &Path, link_dir: &Path, install_method: &InstallMethod) -> Result<()> {
+fn link_(path: &Path, link_dir: &Path, install_method: &InstallMethod) -> Result<()> {
 	let bin: PathBuf = path.join("bin");
 	if install_method
 		.program_name()

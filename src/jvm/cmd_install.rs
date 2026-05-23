@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context as _, Result};
 
-use crate::cmd_link::{link_impl, symlink_link};
 use crate::jvm::feature::Feature;
 use crate::jvm::java_home::set_java_home;
 use crate::jvm::jvm::JVM;
@@ -15,6 +14,7 @@ use crate::jvm::jvm_temurin::download_temurin;
 use crate::jvm::major_version::MajorVersion;
 use crate::jvm::wrapper::{gen_wrapper, install_wrapper};
 use crate::jvm::{JavaVersion, Op};
+use crate::link::{link, symlink_link};
 use crate::{FUJI_DIR, LINK_DIR, compiler_unreachable, exists, io_failure, wrong_cmd};
 
 pub fn cmd_install(op: Op) -> Result<()> {
@@ -92,7 +92,7 @@ pub fn cmd_install(op: Op) -> Result<()> {
 	symlink_link(java_home, Path::new(FUJI_DIR).join("jvm").join("latest"))
 		.context("Couldn't symbolically link FUJI_DIR/jvm/latest to current install directory!")?;
 	println!("Installing {}/bin...", java_home.display());
-	link_impl(java_home, LINK_DIR, &install_method).context("Couldn't install JAVA_HOME!")?;
+	link(java_home, LINK_DIR, &install_method).context("Couldn't install JAVA_HOME!")?;
 	set_java_home(java_home.to_string_lossy())?;
 	println!("Done.\n");
 
