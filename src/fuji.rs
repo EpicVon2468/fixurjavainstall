@@ -280,14 +280,9 @@ fn unsafe_checks() -> Result<()> {
 		};
 	};
 	#[cfg(unix)]
-	// SAFETY:
-	// Problem(s):
-	// - A user may run as non-root by accident, due to a lack of knowledge, or because they are using a permissions manager.
-	// - To check for this & provide a warning as needed, the `geteuid` function from `libc` is required.
-	// - `libc` is unsafe.
-	// Excuse(s):
-	// - From `getuid(2)`: "These functions are always successful and never modify errno.".
-	unsafe {
+	{
+		use std::hint::unlikely;
+
 		// SAFETY: The function declarations given below are in line with the header files of `libc`.
 		unsafe extern "C" {
 
@@ -295,23 +290,17 @@ fn unsafe_checks() -> Result<()> {
 			///
 			/// Returns the effective user ID of the calling process.
 			///
-			/// # Errors
+			/// # Library
 			///
-			/// These functions are always successful and never modify `errno`.
+			/// Source(s):
 			///
-			/// # Safety
+			/// - C Standard Library (`libc`).
 			///
-			/// These functions are always successful and never modify `errno`.
+			/// Standard(s):
 			///
-			/// # See Also
+			/// - [POSIX.1-2024].
 			///
-			/// - [getuid(2)].
-			/// - [getresuid(2)].
-			/// - [setreuid(2)].
-			/// - [setuid(2)].
-			/// - [credentials(7)].
-			///
-			/// ---
+			/// Declaration:
 			///
 			/// ```
 			/// #include <unistd.h>
@@ -319,15 +308,35 @@ fn unsafe_checks() -> Result<()> {
 			/// uid_t geteuid(void);
 			/// ```
 			///
+			/// # Safety
+			///
+			/// This function is guaranteed to be unconditionally safe.<br>
+			/// It is unreasonable to expect that undefined, unsafe, or erroneous behaviour may occur inside this function.
+			///
+			/// # Errors
+			///
+			/// The `geteuid()` function shall not modify <u>`errno`</u>.
+			///
+			/// # Returns
+			///
+			/// The `geteuid()` function shall return the effective user ID of the calling process.
+			///
+			/// The `geteuid()` function shall always be successful and no return value is reserved to indicate an error.
+			///
+			/// # See Also
+			///
+			/// [getuid(2)], [getresuid(2)], [setreuid(2)], [setuid(2)], [credentials(7)]
+			///
+			/// [POSIX.1-2024]: https://pubs.opengroup.org/onlinepubs/9799919799/functions/geteuid.html
 			/// [getuid(2)]: https://man7.org/linux/man-pages/man2/getuid.2.html
 			/// [getresuid(2)]: https://man7.org/linux/man-pages/man2/getresuid.2.html
 			/// [setreuid(2)]: https://man7.org/linux/man-pages/man2/setreuid.2.html
 			/// [setuid(2)]: https://man7.org/linux/man-pages/man2/setuid.2.html
 			/// [credentials(7)]: https://man7.org/linux/man-pages/man7/credentials.7.html
-			fn geteuid() -> u32;
+			pub safe fn geteuid() -> u32;
 		}
 
-		if std::hint::unlikely(geteuid() != 0) {
+		if unlikely(geteuid() != 0) {
 			log_err!(
 				"Fuji ran by non-root user!  If you are not using a permissions manager (i.e. `apparmor`), then this is likely a mistake!"
 			);
