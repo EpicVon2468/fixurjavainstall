@@ -319,7 +319,9 @@ jobs:
       id-token: "write"
     steps:
       - uses: actions/checkout@v6
-      - uses: rust-lang/crates-io-auth-action@v1
+        # GitHub's code scanning says, quote:
+        # "Using a tag for a 3rd party Action that is not pinned to a commit can lead to executing an untrusted Action through a supply chain attack"
+      - uses: rust-lang/crates-io-auth-action@1d2b8f3552d69b407d7790fa3ec7c39041305a61
         id: auth
       - run: cargo publish
         env:
