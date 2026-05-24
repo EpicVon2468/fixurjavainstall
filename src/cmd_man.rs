@@ -1,5 +1,6 @@
+use std::ffi::OsStr;
 use std::fs::{File, create_dir_all};
-use std::io::Write as _;
+use std::io::Write;
 use std::iter::Filter;
 use std::path::Path;
 
@@ -7,7 +8,7 @@ use anyhow::{Context as _, Result};
 
 use clap::{Arg, Command, CommandFactory as _};
 use clap_mangen::Man;
-use clap_mangen::roff::{Roff, roman};
+use clap_mangen::roff::{Roff, bold, roman};
 
 use flate2::read::GzEncoder;
 
@@ -66,15 +67,49 @@ fn dump_manual(cmd: Command, out_dir: &Path) -> Result<()> {
 	generate(&root, out_dir)
 }
 
-fn render0(cmd: &Command, man: &Man, mut out: &mut GzEncoder<File>) -> Result<()> {
-	man.render_title(&mut out).context("title")?;
-	man.render_name_section(&mut out).context("name")?;
-	man.render_synopsis_section(&mut out).context("synopsis")?;
-	man.render_description_section(&mut out).context("desc")?;
+fn render0(cmd: &Command, man: &Man, out: &mut GzEncoder<File>) -> Result<()> {
+	man.render_title(out).context("title")?;
+	man.render_name_section(out).context("name")?;
+	man.render_synopsis_section(out).context("synopsis")?;
+	man.render_description_section(out).context("desc")?;
 	if cmd.get_arguments().any(|arg: &Arg| !arg.is_hide_set()) {
-		man.render_options_section(&mut out).context("options")?;
+		man.render_options_section(out).context("options")?;
+		if cmd
+			.get_arguments()
+			.any(|arg: &Arg| arg.get_env().is_some() && !arg.is_hide_env_set())
+		{
+			render_environment_section(cmd, out).context("environment")?;
+		};
 	};
 	Ok(())
+}
+
+fn render_environment_section(cmd: &Command, out: &mut dyn Write) -> Result<()> {
+	let mut roff: Roff = Default::default();
+	roff.control("SH", ["ENVIRONMENT"]);
+	for arg in cmd.get_arguments().filter(|arg: &&Arg| {
+		arg.get_env().is_some() && !arg.is_hide_set() && !arg.is_hide_env_set()
+	}) {
+		let Some(env): Option<&OsStr> = arg.get_env() else {
+			unreachable!();
+		};
+		let env: &str = &env.to_string_lossy();
+		roff.control("TP", []);
+		roff.text([bold(env)]);
+		roff.text([
+			roman("If $"),
+			bold(env),
+			roman(
+				" is set, it will have the same effect as if it had been specified as the argument to the ",
+			),
+			bold(arg.get_long().map_or_else(
+				|| format!("-{}", cmd.get_short_flag().unwrap()),
+				|long_name: &str| format!("--{long_name}"),
+			)),
+			roman(" option."),
+		]);
+	}
+	roff.to_writer(out).context("to_writer")
 }
 
 // Slight modification of Man::render_subcommands_section to fix display names

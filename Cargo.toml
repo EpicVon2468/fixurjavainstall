@@ -129,7 +129,8 @@ features = [
 [dependencies.clap_mangen]
 version = ">=0.3.0, <1"
 features = [
-	"env",
+	# hand-rolling until they fix formatting
+#	"env",
 ]
 
 [dependencies.dialoguer]

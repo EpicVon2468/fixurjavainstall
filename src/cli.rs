@@ -38,6 +38,8 @@ pub struct Intention {
 	/// Setting a falsey value will cause Fuji to error on suspicious actions.
 	///
 	/// You may additionally use the `--unintentional` flag to set a falsey value.
+	///
+	/// This option will override the $`FUJI_ALL_INTENTIONAL` environment variable.
 	#[arg(
 		short,
 		long,
