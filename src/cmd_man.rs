@@ -52,6 +52,7 @@ fn dump_manual(cmd: Command, out_dir: &Path) -> Result<()> {
 				.context("create man_file.gz")?,
 			Default::default(),
 		);
+		// TODO: render 'ENVIRONMENT' section like `manpath(1)` has
 		render0(parent, &man, &mut output)?;
 		render_subcommands(parent, &mut output)?;
 		render1(parent, &man, &mut output)?;

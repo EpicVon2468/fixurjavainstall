@@ -33,22 +33,22 @@ pub struct FujiArgs {
 	#[arg(
 		short,
 		long,
-		env = "FUJI_ALL_UNINTENTIONAL",
-		conflicts_with = "unintentional",
+		env = "FUJI_ALL_INTENTIONAL",
 		value_parser = BoolishValueParser::new(),
 		action = ArgAction::SetTrue,
 		default_value_t = false,
+		overrides_with = "unintentional",
 	)]
 	pub intentional: bool,
 
 	#[arg(
 		short,
 		long,
-		env = "FUJI_ALL_UNINTENTIONAL",
-		conflicts_with = "intentional",
-		value_parser = BoolishValueParser::new().map(|val| !val),
+		env = "FUJI_ALL_INTENTIONAL",
+		value_parser = BoolishValueParser::new().map(|value: bool| !value),
 		action = ArgAction::SetFalse,
 		default_value_t = true,
+		overrides_with = "intentional",
 	)]
 	pub unintentional: bool,
 }
