@@ -44,8 +44,6 @@ See [INSTALLATION.md](https://github.com/EpicVon2468/fixurjavainstall/blob/maste
 
 ## Crate Feature Flags
 
----
-
 ### `default`
 
 Transitive Feature Flags: `openjdk-restricted`<br>

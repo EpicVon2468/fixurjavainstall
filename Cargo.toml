@@ -103,7 +103,6 @@ required-features = [
 ]
 
 [dependencies]
-clap_mangen = ">=0.3.0, <1"
 which = ">=8.0.2, <9"
 flate2 = ">=1.1.9, <2"
 anyhow = ">=1.0.102, <2"
@@ -124,6 +123,13 @@ features = [
 	"unstable-markdown",
 	"unicode",
 	"unstable-v5",
+	"env",
+]
+
+[dependencies.clap_mangen]
+version = ">=0.3.0, <1"
+features = [
+	"env",
 ]
 
 [dependencies.dialoguer]

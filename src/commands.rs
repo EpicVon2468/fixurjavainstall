@@ -1,5 +1,4 @@
 use std::cmp::min;
-use std::env::var;
 use std::fmt::Write;
 use std::fs::{File, create_dir_all};
 use std::hint::cold_path;
@@ -25,7 +24,8 @@ use which::which;
 use zip::ZipArchive;
 use zip::read::ZipFile;
 
-use crate::{flush_all, io_failure, lock, log_err, matches_many, unlock};
+use crate::flag::all_intentional;
+use crate::{flush_all, io_failure, lock, log_err, unlock};
 
 /// Checks if the program `name` exists.  This is equivalent to `which(name).is_ok()`.
 #[inline]
@@ -425,9 +425,14 @@ pub fn require_archlinux_java() -> Result<()> {
 // RustRover doesn't seem to fully understand cfg_select! {} yet, so have to use this for now...
 #[cfg(feature = "interactive")]
 pub fn require_intentional(message: &str) -> Result<()> {
+	use std::env::var;
+
 	use dialoguer::Confirm;
 
-	let intentional: bool = all_intentional() || {
+	// if FUJI_ALL_INTENTIONAL is set, it is the be-all end-all
+	let intentional: bool = if var("FUJI_ALL_INTENTIONAL").is_ok() {
+		all_intentional()
+	} else {
 		Confirm::new()
 			.with_prompt("I know what I am doing:")
 			.wait_for_newline(true)
@@ -450,10 +455,4 @@ pub fn require_intentional(message: &str) -> Result<()> {
 		bail!("User unintentionally {message}");
 	};
 	Ok(())
-}
-
-// TODO: get this documented in man pages & help section
-fn all_intentional() -> bool {
-	var("FUJI_ALL_INTENTIONAL")
-		.is_ok_and(|value: String| matches_many!(value.as_str(), "1", "true", "y", "yes"))
 }

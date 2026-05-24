@@ -73,6 +73,7 @@ pub mod cmd_man;
 pub mod cmd_manage;
 pub mod commands;
 pub mod env_util;
+pub mod flag;
 pub mod fuji_value_enum;
 pub mod install_method;
 pub mod jvm;
@@ -83,7 +84,7 @@ pub mod macros;
 pub mod tui;
 pub mod win_link;
 
-use std::env::args_os;
+use std::env::{args_os, set_var, var};
 use std::ffi::OsString;
 use std::fs::{File, remove_file};
 use std::io::Write as _;
@@ -215,7 +216,6 @@ pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 ///
 /// * If [`FujiArgs::command`] is [`Some`]:
 /// 	* Propagated up from the following functions (if they are called):
-/// 		* [`cmd_link`][`cmd_link()`]
 /// 		* [`cmd_manage`][`cmd_manage()`]
 /// 		* [`cmd_man`][`cmd_man()`]
 ///
@@ -228,7 +228,6 @@ pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 /// * If [`FujiArgs::command`] is [`None`]: [`Ok`]
 /// * If [`FujiArgs::command`] is [`Some`]:
 /// 	* Propagated up from the following functions (if they are called):
-/// 		* [`cmd_link`][`cmd_link()`]
 /// 		* [`cmd_manage`][`cmd_manage()`]
 /// 		* [`cmd_man`][`cmd_man()`]
 ///
@@ -245,7 +244,7 @@ pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 ///
 /// [`FujiArgs::command`]: field@FujiArgs::command
 pub fn entrypoint(args: FujiArgs) -> Result<()> {
-	flight_checks()?;
+	flight_checks(&args)?;
 	let lock: File = claim_singleton_process()?;
 	let result: Result<()> = args.command.map_or_else(
 		|| Ok(()),
@@ -259,7 +258,19 @@ pub fn entrypoint(args: FujiArgs) -> Result<()> {
 }
 
 #[allow(clippy::unnecessary_wraps)]
-fn flight_checks() -> Result<()> {
+fn flight_checks(args: &FujiArgs) -> Result<()> {
+	// SAFETY:
+	// Problem(s):
+	// - Mutation of `environ` can be thread unsafe.
+	// Excuse(s):
+	// - Fuji does not feature multi-threading involving reading or writing `environ`.
+	// - The new value is trusted input and known to be safe at compile-time.
+	unsafe {
+		// If all_intentional isn't stored in the env var, set the env var to the value.
+		if var("FUJI_ALL_INTENTIONAL").is_err() {
+			set_var("FUJI_ALL_INTENTIONAL", args.all_intentional.to_string());
+		};
+	};
 	#[cfg(feature = "dev")]
 	// SAFETY:
 	// Problem(s):
@@ -268,7 +279,6 @@ fn flight_checks() -> Result<()> {
 	// - Fuji does not feature multi-threading involving reading or writing `environ`.
 	// - The new value is trusted input and known to be safe at compile-time.
 	unsafe {
-		use std::env::{set_var, var};
 		use std::hint::likely;
 
 		if likely(var("RUST_BACKTRACE").is_err()) {
