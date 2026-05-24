@@ -24,7 +24,7 @@ use which::which;
 use zip::ZipArchive;
 use zip::read::ZipFile;
 
-use crate::flag::all_intentional;
+use crate::flag::{all_intentional, is_present};
 use crate::{flush_all, io_failure, lock, log_err, unlock};
 
 /// Checks if the program `name` exists.  This is equivalent to `which(name).is_ok()`.
@@ -425,12 +425,10 @@ pub fn require_archlinux_java() -> Result<()> {
 // RustRover doesn't seem to fully understand cfg_select! {} yet, so have to use this for now...
 #[cfg(feature = "interactive")]
 pub fn require_intentional(message: &str) -> Result<()> {
-	use std::env::var;
-
 	use dialoguer::Confirm;
 
 	// if FUJI_ALL_INTENTIONAL is set, it is the be-all end-all
-	let intentional: bool = if var("FUJI_ALL_INTENTIONAL").is_ok() {
+	let intentional: bool = if is_present("FUJI_ALL_INTENTIONAL") {
 		all_intentional()
 	} else {
 		Confirm::new()

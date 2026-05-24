@@ -98,6 +98,7 @@ use crate::cli::{FujiArgs, FujiCmd};
 use crate::cmd_man::cmd_man;
 use crate::cmd_manage::cmd_manage;
 use crate::commands::require_intentional;
+use crate::flag::is_truthy;
 
 /// The installation directory for fuji-managed programs.
 ///
@@ -243,8 +244,8 @@ pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 /// ```
 ///
 /// [`FujiArgs::command`]: field@FujiArgs::command
-pub fn entrypoint(args: FujiArgs) -> Result<()> {
-	flight_checks(&args)?;
+pub fn entrypoint(mut args: FujiArgs) -> Result<()> {
+	flight_checks(&mut args)?;
 	let lock: File = claim_singleton_process()?;
 	let result: Result<()> = args.command.map_or_else(
 		|| Ok(()),
@@ -258,7 +259,7 @@ pub fn entrypoint(args: FujiArgs) -> Result<()> {
 }
 
 #[allow(clippy::unnecessary_wraps)]
-fn flight_checks(args: &FujiArgs) -> Result<()> {
+fn flight_checks(args: &mut FujiArgs) -> Result<()> {
 	// SAFETY:
 	// Problem(s):
 	// - Mutation of `environ` can be thread unsafe.
@@ -266,10 +267,22 @@ fn flight_checks(args: &FujiArgs) -> Result<()> {
 	// - Fuji does not feature multi-threading involving reading or writing `environ`.
 	// - The new value is trusted input and known to be safe at compile-time.
 	unsafe {
-		// If all_intentional isn't stored in the env var, set the env var to the value.
-		if var("FUJI_ALL_INTENTIONAL").is_err() {
-			set_var("FUJI_ALL_INTENTIONAL", args.all_intentional.to_string());
+		dbg!((args.intentional, args.unintentional));
+		// it will only ever be one or the other, not both
+		if args.intentional || args.unintentional {
+			let intentional: bool = args.intentional; /*|| { if args.unintentional { false } else { false } };*/
+			// If all_intentional isn't stored in the env var, set the env var to the value.
+			if var("FUJI_ALL_INTENTIONAL").is_err() {
+				set_var("FUJI_ALL_INTENTIONAL", intentional.to_string());
+			};
+		} else if let Ok(value) = var("FUJI_ALL_INTENTIONAL") {
+			if is_truthy(value) {
+				args.intentional = true;
+			} else {
+				args.unintentional = true;
+			};
 		};
+		dbg!((args.intentional, args.unintentional));
 	};
 	#[cfg(feature = "dev")]
 	// SAFETY:

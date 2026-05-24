@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use clap::builder::BoolishValueParser;
-use clap::{Parser, Subcommand};
+use clap::builder::{BoolishValueParser, TypedValueParser as _};
+use clap::{ArgAction, Parser, Subcommand};
 
 use crate::fuji_version;
 
@@ -21,7 +21,6 @@ pub struct FujiArgs {
 	pub command: Option<FujiCmd>,
 
 	// TODO: FUJI_NO_WARN
-	// TODO: make Option<bool> ?
 	/// Whether Fuji should consider all 'suspicious actions' to be intentional.
 	///
 	#[cfg_attr(
@@ -34,11 +33,24 @@ pub struct FujiArgs {
 	#[arg(
 		short,
 		long,
-		env = "FUJI_ALL_INTENTIONAL",
+		env = "FUJI_ALL_UNINTENTIONAL",
+		conflicts_with = "unintentional",
 		value_parser = BoolishValueParser::new(),
+		action = ArgAction::SetTrue,
 		default_value_t = false,
 	)]
-	pub all_intentional: bool,
+	pub intentional: bool,
+
+	#[arg(
+		short,
+		long,
+		env = "FUJI_ALL_UNINTENTIONAL",
+		conflicts_with = "intentional",
+		value_parser = BoolishValueParser::new().map(|val| !val),
+		action = ArgAction::SetFalse,
+		default_value_t = true,
+	)]
+	pub unintentional: bool,
 }
 
 #[derive_const(Subcommand)]

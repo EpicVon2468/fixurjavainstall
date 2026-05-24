@@ -7,6 +7,11 @@ pub fn all_intentional() -> bool {
 }
 
 #[must_use]
+pub fn is_present(key: &str) -> bool {
+	var(key).is_ok_and(|value: String| !value.trim().is_empty())
+}
+
+#[must_use]
 #[allow(clippy::needless_pass_by_value)]
 pub fn is_truthy(value: String) -> bool {
 	matches_many!(

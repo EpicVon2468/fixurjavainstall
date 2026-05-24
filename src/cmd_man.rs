@@ -48,7 +48,7 @@ fn dump_manual(cmd: Command, out_dir: &Path) -> Result<()> {
 			);
 
 		let mut output: GzEncoder<File> = GzEncoder::new(
-			File::create_new(out_dir.join(man.get_filename()).with_added_extension("gz"))
+			File::create(out_dir.join(man.get_filename()).with_added_extension("gz"))
 				.context("create man_file.gz")?,
 			Default::default(),
 		);
