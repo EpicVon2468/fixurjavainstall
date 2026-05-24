@@ -98,7 +98,6 @@ use crate::cli::{FujiArgs, FujiCmd};
 use crate::cmd_man::cmd_man;
 use crate::cmd_manage::cmd_manage;
 use crate::commands::require_intentional;
-use crate::flag::is_truthy;
 
 /// The installation directory for fuji-managed programs.
 ///
@@ -267,22 +266,17 @@ fn flight_checks(args: &mut FujiArgs) -> Result<()> {
 	// - Fuji does not feature multi-threading involving reading or writing `environ`.
 	// - The new value is trusted input and known to be safe at compile-time.
 	unsafe {
-		dbg!((args.intentional, args.unintentional));
-		// it will only ever be one or the other, not both
-		if args.intentional || args.unintentional {
-			let intentional: bool = args.intentional; /*|| { if args.unintentional { false } else { false } };*/
-			// If all_intentional isn't stored in the env var, set the env var to the value.
-			if var("FUJI_ALL_INTENTIONAL").is_err() {
-				set_var("FUJI_ALL_INTENTIONAL", intentional.to_string());
-			};
-		} else if let Ok(value) = var("FUJI_ALL_INTENTIONAL") {
-			if is_truthy(value) {
-				args.intentional = true;
-			} else {
-				args.unintentional = true;
-			};
+		if args.intention.unintentional {
+			args.intention.all_intentional = Some(false);
 		};
-		dbg!((args.intentional, args.unintentional));
+		if let Some(value) = args.intention.all_intentional {
+			// Not needed per se, but it's nice to synchronise state.
+			if !value {
+				args.intention.unintentional = true;
+			};
+			// Later internal checks rely entirely upon this env var.
+			set_var("FUJI_ALL_INTENTIONAL", value.to_string());
+		};
 	};
 	#[cfg(feature = "dev")]
 	// SAFETY:

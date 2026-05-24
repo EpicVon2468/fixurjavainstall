@@ -37,7 +37,7 @@ fn dump_manual(cmd: Command, out_dir: &Path) -> Result<()> {
 
 		let man: Man = Man::new(parent.clone())
 			.section("8")
-			.date("2026-05-22")
+			.date("2026-05-24")
 			.source(concat!("fuji ", env!("CARGO_PKG_VERSION")))
 			// All capitalised is the convention for commands
 			.title(

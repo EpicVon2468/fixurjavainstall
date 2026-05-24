@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use clap::builder::{BoolishValueParser, TypedValueParser as _};
-use clap::{ArgAction, Parser, Subcommand};
+use clap::builder::BoolishValueParser;
+use clap::{ArgAction, Args, Parser, Subcommand};
 
 use crate::fuji_version;
 
@@ -15,40 +15,49 @@ use crate::fuji_version;
 	author,
 	name = "fuji",
 	display_name = "fuji",
+	propagate_version = true,
 )]
 pub struct FujiArgs {
 	#[command(subcommand)]
 	pub command: Option<FujiCmd>,
+	#[command(flatten)]
+	pub intention: Intention,
+}
 
-	// TODO: FUJI_NO_WARN
+#[derive(Args)]
+#[group(required = false, multiple = true)]
+pub struct Intention {
 	/// Whether Fuji should consider all 'suspicious actions' to be intentional.
 	///
 	#[cfg_attr(
 		feature = "interactive",
 		doc = "Setting any value whatsoever for this flag will prevent the 'I know what I am doing: [y/n]' prompts from being shown.\n"
 	)]
-	/// Setting a falsey value will cause Fuji to crash on suspicious actions.
-	///
 	/// Setting a truthy value will cause Fuji to continue operation (& print warning(s)) on suspicious actions.
+	///
+	/// Setting a falsey value will cause Fuji to error on suspicious actions.
+	///
+	/// You may additionally use the `--unintentional` flag to set a falsey value.
 	#[arg(
 		short,
 		long,
 		env = "FUJI_ALL_INTENTIONAL",
 		value_parser = BoolishValueParser::new(),
-		action = ArgAction::SetTrue,
-		default_value_t = false,
-		overrides_with = "unintentional",
+		action = ArgAction::Set,
+		num_args = 0..=1,
+		default_missing_value = "true",
+		require_equals = true,
+		value_name = "VALUE",
+		conflicts_with = "unintentional",
+		visible_alias = "intentional",
 	)]
-	pub intentional: bool,
+	pub all_intentional: Option<bool>,
 
+	/// Sets the `--all-intentional` option to false.
 	#[arg(
 		short,
 		long,
-		env = "FUJI_ALL_INTENTIONAL",
-		value_parser = BoolishValueParser::new().map(|value: bool| !value),
-		action = ArgAction::SetFalse,
-		default_value_t = true,
-		overrides_with = "intentional",
+		value_parser = BoolishValueParser::new(),
 	)]
 	pub unintentional: bool,
 }
