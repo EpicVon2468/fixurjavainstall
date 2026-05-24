@@ -40,7 +40,7 @@ fn link_(path: &Path, link_dir: &Path, install_method: &InstallMethod) -> Result
 		.read_dir()
 		.with_context(|| io_failure!(bin.display(), "list directory"))?;
 	for entry in entries {
-		let file: &Path = &entry?.path();
+		let file: PathBuf = entry?.path();
 		if file.is_dir() {
 			continue;
 		};
@@ -55,6 +55,16 @@ fn link_(path: &Path, link_dir: &Path, install_method: &InstallMethod) -> Result
 				continue;
 			};
 		};
+		#[cfg(windows)]
+		{
+			use crate::matches_many;
+
+			if file.extension().is_none_or(|ext: &OsStr| {
+				!matches_many!(ext.to_str().unwrap_or_default(), "exe", "bat", "cmd")
+			}) {
+				continue;
+			};
+		};
 		let filename: &OsStr = file
 			.file_name()
 			.context("Couldn't get filename for directory entry!")?;
@@ -62,8 +72,8 @@ fn link_(path: &Path, link_dir: &Path, install_method: &InstallMethod) -> Result
 		match *install_method {
 			InstallMethod::Symlink =>
 				symlink_link(file, dest).context("Couldn't link with symlink!"),
-			InstallMethod::UpdateAlternatives =>
-				debian_link(file, filename, dest).context("Couldn't link with update-alternatives!"),
+			InstallMethod::UpdateAlternatives => debian_link(&file, filename, dest)
+				.context("Couldn't link with update-alternatives!"),
 			_ => unreachable!(),
 		}?;
 		progress = min(progress + metadata.len(), max_len);

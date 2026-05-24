@@ -123,7 +123,7 @@ pub fn manage_jvm(software: Software) -> Result<()> {
 	}
 }
 
-#[derive_const(Serialise, Deserialise)]
+#[derive_const(Default, Serialise, Deserialise)]
 pub struct JavaVersion {
 	pub major: String,
 	pub specific: String,

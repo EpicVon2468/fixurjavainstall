@@ -1,4 +1,5 @@
 use std::cmp::min;
+use std::env::var;
 use std::fmt::Write;
 use std::fs::{File, create_dir_all};
 use std::hint::cold_path;
@@ -24,7 +25,7 @@ use which::which;
 use zip::ZipArchive;
 use zip::read::ZipFile;
 
-use crate::{flush_all, io_failure, lock, log_err, unlock};
+use crate::{flush_all, io_failure, lock, log_err, matches_many, unlock};
 
 /// Checks if the program `name` exists.  This is equivalent to `which(name).is_ok()`.
 #[inline]
@@ -424,22 +425,35 @@ pub fn require_archlinux_java() -> Result<()> {
 // RustRover doesn't seem to fully understand cfg_select! {} yet, so have to use this for now...
 #[cfg(feature = "interactive")]
 pub fn require_intentional(message: &str) -> Result<()> {
-	let intentional: bool = dialoguer::Confirm::new()
-		.with_prompt("I know what I am doing:")
-		.wait_for_newline(true)
-		.default(false)
-		.interact()
-		.context("Unexpected error occurred in Confirm dialogue!")?;
+	use dialoguer::Confirm;
+
+	let intentional: bool = all_intentional() || {
+		Confirm::new()
+			.with_prompt("I know what I am doing:")
+			.wait_for_newline(true)
+			.default(false)
+			.interact()
+			.context("Unexpected error occurred in Confirm dialogue!")?
+	};
 
 	if !intentional {
-		bail!("User unintentionally {}", message.to_owned());
+		bail!("User unintentionally {message}");
 	};
 	Ok(())
 }
 
-#[inline(always)]
-#[expect(clippy::inline_always)]
 #[cfg(not(feature = "interactive"))]
-pub const fn require_intentional(_message: &str) -> Result<()> {
+pub fn require_intentional(message: &str) -> Result<()> {
+	let intentional: bool = all_intentional();
+
+	if !intentional {
+		bail!("User unintentionally {message}");
+	};
 	Ok(())
+}
+
+// TODO: get this documented in man pages & help section
+fn all_intentional() -> bool {
+	var("FUJI_ALL_INTENTIONAL")
+		.is_ok_and(|value: String| matches_many!(value.as_str(), "1", "true", "y", "yes"))
 }

@@ -30,11 +30,15 @@ pub fn cmd_install(op: Op) -> Result<()> {
 		wrong_cmd!(cmd_install);
 	};
 	let java_version: JavaVersion = if jvm == JVM::Liberica {
-		let download_uri: String = get_liberica_download(&features, &arch, &version)?;
+		let (download_url, version): (String, u32) =
+			get_liberica_download(&features, &arch, &version)?;
 		JavaVersion {
-			major: download_uri,
-			specific: String::new(),
-			revision: String::new(),
+			// SAFETY:
+			// Whilst `featureVersion` is technically untrusted data, it's parsed into a `u32`, so it cannot contain arbitrary file sequences.
+			// Thus, even though java_home is resolved by accepting this untrusted data, this remains safe, as the `u32` cannot contain periods or escape sequences.
+			major: version.to_string(),
+			specific: download_url,
+			..Default::default()
 		}
 	} else if (jvm == JVM::Temurin || jvm == JVM::JavaSE)
 		&& let MajorVersion::Number(num) = version
@@ -42,8 +46,7 @@ pub fn cmd_install(op: Op) -> Result<()> {
 		// Temurin & Java SE both only need major version, except for LTS/Latest where we return the major version from our endpoint
 		JavaVersion {
 			major: num.to_string(),
-			specific: String::new(),
-			revision: String::new(),
+			..Default::default()
 		}
 	} else {
 		let uri: String = format!(
@@ -56,8 +59,11 @@ pub fn cmd_install(op: Op) -> Result<()> {
 			.read_json()
 			.context("Couldn't read JVM version information!")?
 	};
+
+	let jvm_dir: PathBuf = Path::new(FUJI_DIR).join("jvm");
+
 	// FUJI_DIR/jvm/{version}
-	let java_home: &Path = &Path::new(FUJI_DIR).join("jvm").join(&java_version.major);
+	let java_home: &Path = &jvm_dir.join(&java_version.major);
 	if !dry_run {
 		clean_java_home(java_home).context("Couldn't clean JAVA_HOME!")?;
 	};
@@ -87,7 +93,7 @@ pub fn cmd_install(op: Op) -> Result<()> {
 		return Ok(());
 	};
 	// make FUJI_DIR/jvm/latest point to FUJI_DIR/jvm/{version}
-	symlink_link(java_home, Path::new(FUJI_DIR).join("jvm").join("latest"))
+	symlink_link(java_home, jvm_dir.join("latest"))
 		.context("Couldn't symbolically link FUJI_DIR/jvm/latest to current install directory!")?;
 	println!("Installing {}/bin...", java_home.display());
 	link(java_home, LINK_DIR, &install_method).context("Couldn't install JAVA_HOME!")?;

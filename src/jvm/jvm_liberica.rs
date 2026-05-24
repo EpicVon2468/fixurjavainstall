@@ -13,16 +13,16 @@ use crate::jvm::major_version::MajorVersion;
 use crate::{log_err, os_archive, os_name};
 
 pub fn download_liberica(args: DownloadJVMArgs) -> Result<()> {
-	jvm_download_impl(args.version.major.clone(), args)
+	jvm_download_impl(args.version.specific.clone(), args)
 }
 
 pub fn get_liberica_download(
 	features: &[Feature],
 	arch: &Arch,
 	version: &MajorVersion,
-) -> Result<String> {
-	let uri: String = get_liberica_endpoint(features, arch, version)?;
-	let values: Vec<LibericaReleaseInfo> = ureq::get(uri)
+) -> Result<(String, u32)> {
+	let url: String = get_liberica_endpoint(features, arch, version)?;
+	let values: Vec<LibericaReleaseInfo> = ureq::get(url)
 		.call()
 		.context("No Liberica JVM was available for the provided request!")?
 		.into_body()
@@ -37,7 +37,16 @@ pub fn get_liberica_download(
 		);
 		require_intentional("requested a JVM which is marked as End Of Life!")?;
 	};
-	Ok(the_one.downloadUrl.clone())
+	let download_url: &String = &the_one.downloadUrl;
+	if !download_url.starts_with("https://github.com/bell-sw/Liberica") {
+		log_err!("Couldn't verify Liberica download URL!");
+		log_err!(
+			"Expected 'https://github.com/bell-sw/Liberica', but received unexpected link instead!"
+		);
+		log_err!("Actual link was: '{download_url}'!");
+		require_intentional("requested a Liberica JVM which returned an unexpected download URL!")?;
+	};
+	Ok((download_url.clone(), the_one.featureVersion))
 }
 
 pub fn get_liberica_endpoint(
