@@ -5,7 +5,7 @@ use crate::install_option;
 use crate::jvm::feature::Feature;
 use crate::tui::page::jvm::install_option::InstallOption;
 
-impl const ListEntry for Feature {
+const impl ListEntry for Feature {
 	fn name(&self) -> &'static str {
 		match *self {
 			Self::Minimal => "Minimal",
@@ -49,7 +49,7 @@ pub struct FeatureOption<'a> {
 
 install_option!(FeatureOption, Feature, true);
 
-impl const InstallOption for FeatureOption<'_> {
+const impl InstallOption for FeatureOption<'_> {
 	fn tab_name(&self) -> &'static str {
 		"Features"
 	}

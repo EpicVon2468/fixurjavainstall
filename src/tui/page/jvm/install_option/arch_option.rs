@@ -5,7 +5,7 @@ use crate::arch::Arch;
 use crate::install_option;
 use crate::tui::page::jvm::install_option::InstallOption;
 
-impl const ListEntry for Arch {
+const impl ListEntry for Arch {
 	fn name(&self) -> &'static str {
 		match *self {
 			Self::X64 => "x86-64",
@@ -21,7 +21,7 @@ pub struct ArchOption<'a> {
 
 install_option!(ArchOption, Arch);
 
-impl const InstallOption for ArchOption<'_> {
+const impl InstallOption for ArchOption<'_> {
 	fn tab_name(&self) -> &'static str {
 		"Architecture"
 	}

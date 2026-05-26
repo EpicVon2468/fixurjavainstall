@@ -5,7 +5,7 @@ use crate::install_method::InstallMethod;
 use crate::install_option;
 use crate::tui::page::jvm::install_option::InstallOption;
 
-impl const ListEntry for InstallMethod {
+const impl ListEntry for InstallMethod {
 	fn name(&self) -> &'static str {
 		match *self {
 			Self::Path => cfg_select! {
@@ -24,7 +24,7 @@ pub struct MethodOption<'a> {
 
 install_option!(MethodOption, InstallMethod);
 
-impl const InstallOption for MethodOption<'_> {
+const impl InstallOption for MethodOption<'_> {
 	fn tab_name(&self) -> &'static str {
 		"Installation Method"
 	}

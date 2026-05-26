@@ -5,7 +5,7 @@ authors = [
 	"Mavity The Madity",
 ]
 edition = "2024"
-rust-version = "1.97.0"
+rust-version = "1.98.0"
 description = "A JVM & Kotlin management utility"
 readme = "README.md"
 homepage = "https://github.com/EpicVon2468/fixurjavainstall/"
@@ -51,6 +51,10 @@ openjdk-restricted = []
 tui = [
 	"dep:ratatui",
 	"dep:mavity-tui-components",
+]
+# Features which generally require a terminal emulator, as opposed to a raw tty
+non-tty = [
+	"dep:console",
 ]
 
 [lib]
@@ -106,7 +110,6 @@ required-features = [
 which = ">=8.0.2, <9"
 flate2 = ">=1.1.9, <2"
 anyhow = ">=1.0.102, <2"
-console = ">=0.16.3, <1"
 shell-words = ">=1.1.1, <2"
 unicode-width = ">=0.2.2, <1"
 
@@ -140,6 +143,10 @@ features = [
 	"editor",
 ]
 default-features = false
+
+[dependencies.console]
+version = ">=0.16.3, <1"
+optional = true
 
 [dependencies.ratatui]
 version = ">=0.30.0, <1"

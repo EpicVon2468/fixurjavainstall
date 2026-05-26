@@ -64,7 +64,8 @@
 	derive_const,
 	const_clone,
 	const_cmp,
-	likely_unlikely
+	likely_unlikely,
+	normalize_lexically
 )]
 #![doc = include_str!("../README.md")]
 pub mod arch;
@@ -88,7 +89,7 @@ use std::env::{args_os, set_var, var};
 use std::ffi::OsString;
 use std::fs::{File, remove_file};
 use std::io::Write as _;
-use std::process::{abort, id};
+use std::process::{abort, id as pid};
 
 use anyhow::{Context as _, Result};
 
@@ -390,13 +391,13 @@ fn claim_singleton_process() -> Result<File> {
 	let mut file: File =
 		File::create_new(LOCK).context(format!("Couldn't acquire lockfile {LOCK}!"))?;
 	lock!(file);
-	writeln!(file, "{}\n", id()).context(format!("Couldn't write to lockfile {LOCK}!"))?;
+	writeln!(file, "{}\n", pid()).context(format!("Couldn't write to lockfile {LOCK}!"))?;
 	Ok(file)
 }
 
-#[allow(clippy::needless_pass_by_value, reason = "Not using it anywhere else.")]
 fn unclaim_singleton_process(file: File) -> Result<()> {
 	unlock!(file);
+	drop(file);
 	remove_file(LOCK).context(format!("Couldn't remove lockfile {LOCK}!"))?;
 	Ok(())
 }

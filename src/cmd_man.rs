@@ -28,23 +28,23 @@ pub fn cmd_man(cmd: FujiCmd) -> Result<()> {
 
 // Based off clap_mangen::generate_to
 fn dump_manual(cmd: Command, out_dir: &Path) -> Result<()> {
-	fn generate(parent: &Command, out_dir: &Path) -> Result<()> {
-		let children: Filter<_, _> = parent
+	fn generate(cmd: &Command, out_dir: &Path) -> Result<()> {
+		let children: Filter<_, _> = cmd
 			.get_subcommands()
 			.filter(|child: &&Command| !child.is_hide_set());
 		for child in children {
 			generate(child, out_dir)?;
 		}
 
-		let man: Man = Man::new(parent.clone())
+		let man: Man = Man::new(cmd.clone())
 			.section("8")
 			.date("2026-05-24")
 			.source(concat!("fuji ", env!("CARGO_PKG_VERSION")))
+			// TODO: upstream
 			// All capitalised is the convention for commands
 			.title(
-				parent
-					.get_display_name()
-					.unwrap_or_else(|| parent.get_name())
+				cmd.get_display_name()
+					.unwrap_or_else(|| cmd.get_name())
 					.to_ascii_uppercase(),
 			);
 
@@ -53,10 +53,9 @@ fn dump_manual(cmd: Command, out_dir: &Path) -> Result<()> {
 				.context("create man_file.gz")?,
 			Default::default(),
 		);
-		// TODO: render 'ENVIRONMENT' section like `manpath(1)` has
-		render0(parent, &man, &mut output)?;
-		render_subcommands(parent, &mut output)?;
-		render1(parent, &man, &mut output)?;
+		render0(cmd, &man, &mut output)?;
+		render_subcommands(cmd, &mut output)?;
+		render1(cmd, &man, &mut output)?;
 		output.flush().context("flush")?;
 
 		Ok(())
@@ -84,6 +83,7 @@ fn render0(cmd: &Command, man: &Man, out: &mut GzEncoder<File>) -> Result<()> {
 	Ok(())
 }
 
+// TODO: upstream
 fn render_environment_section(cmd: &Command, out: &mut dyn Write) -> Result<()> {
 	let mut roff: Roff = Default::default();
 	roff.control("SH", ["ENVIRONMENT"]);
@@ -135,6 +135,7 @@ fn render_subcommands(parent: &Command, mut out: &mut GzEncoder<File>) -> Result
 			.sort_by_key(|child: &&Command| (child.get_display_order(), child.get_name()));
 		for child in sorted_subcommands {
 			roff.control("TP", []);
+			// TODO: upstream
 			// the built-in implementation of this part is broken
 			// fuji-manage will try to resolve fuji-jvm as though it were still called fuji-manage-jvm
 			let name: String = child.get_display_name().map_or_else(
@@ -165,17 +166,15 @@ fn render1(cmd: &Command, man: &Man, mut out: &mut GzEncoder<File>) -> Result<()
 	if cmd.get_after_long_help().is_some() || cmd.get_after_help().is_some() {
 		man.render_extra_section(&mut out).context("extra")?;
 	};
-	if has_version(cmd) {
+	if cmd
+		.get_version()
+		.or_else(|| cmd.get_long_version())
+		.is_some()
+	{
 		man.render_version_section(&mut out).context("version")?;
 	};
 	if cmd.get_author().is_some() {
 		man.render_authors_section(&mut out).context("authors")?;
 	};
 	Ok(())
-}
-
-fn has_version(cmd: &Command) -> bool {
-	cmd.get_version()
-		.or_else(|| cmd.get_long_version())
-		.is_some()
 }

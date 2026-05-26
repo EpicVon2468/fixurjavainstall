@@ -23,7 +23,7 @@ pub trait FujiValueEnum: FromStr<Err = String> + 'static {
 pub struct FujiValueEnumParser<T: FujiValueEnum>(PhantomData<T>);
 
 // PhantomData's Clone impl isn't const, so can't use #[derive_const(Clone)]
-impl<T: FujiValueEnum> const Clone for FujiValueEnumParser<T> {
+const impl<T: FujiValueEnum> Clone for FujiValueEnumParser<T> {
 	fn clone(&self) -> Self {
 		Self(self.0)
 	}

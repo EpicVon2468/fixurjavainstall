@@ -102,9 +102,28 @@ macro_rules! flush_all {
 
 #[macro_export]
 macro_rules! log_err {
-	($($arg:tt)*) => {{
-		eprintln!("{}", console::style(format!($($arg)*)).red());
-	}};
+	($($arg:tt)*) => {
+		eprintln!(
+			"{}",
+			cfg_select! {
+				feature = "non-tty" => console::style(format!($($arg)*)).red(),
+				_ => format!($($arg)*),
+			},
+		);
+	};
+}
+
+#[macro_export]
+macro_rules! abnormal_abort {
+	($($arg:expr),* $(,)?) => {
+		$($crate::log_err!($arg);)*
+		$crate::log_err!("\
+			This is considered to be an extreme abnormality!\n\
+			Fuji will now abort!\
+		");
+		$crate::flush_all!();
+		std::process::abort();
+	};
 }
 
 #[macro_export]

@@ -4,8 +4,7 @@ use std::fs::{File, create_dir_all};
 use std::hint::cold_path;
 use std::io::copy;
 use std::num::TryFromIntError;
-use std::path::{Component, Components, Path, PathBuf};
-use std::process::abort;
+use std::path::{Components, NormalizeError, Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::{Context as _, Result, bail};
@@ -25,7 +24,7 @@ use zip::ZipArchive;
 use zip::read::ZipFile;
 
 use crate::flag::{all_intentional, is_present};
-use crate::{flush_all, io_failure, lock, log_err, unlock};
+use crate::{abnormal_abort, io_failure, lock, unlock};
 
 /// Checks if the program `name` exists.  This is equivalent to `which(name).is_ok()`.
 #[inline]
@@ -49,7 +48,7 @@ pub fn has_program(name: &str) -> bool {
 /// Error value(s):
 ///
 /// * Propagated up from the following functions (if they return [`Err`]):
-/// 	* [`Path::canonicalise`][`Path::canonicalize`]
+/// 	* [`Path::normalise_lexically`][`Path::normalize_lexically`]
 /// 	* [`File::open`]
 /// * If `is_zip` is true:
 /// 	* Propagated up from [`extract_jvm_zip`].
@@ -58,7 +57,7 @@ pub fn has_program(name: &str) -> bool {
 ///
 /// # Implementation Notes
 ///
-/// * `dest` is [`canonicalised`][`Path::canonicalize`] before use.
+/// * `dest` is [`normalised lexically`][`Path::normalize_lexically`] before use.
 /// * No checks are performed to determine if `dest` exists.
 /// * If `is_zip` is true, no checks are performed to determine if `archive` ends with `.zip`, and vice versa.
 ///
@@ -74,7 +73,7 @@ pub fn has_program(name: &str) -> bool {
 /// Return value(s):
 ///
 /// * Propagated up from the following functions (if they return [`Err`]):
-/// 	* [`Path::canonicalise`][`Path::canonicalize`]
+/// 	* [`Path::normalise_lexically`][`Path::normalize_lexically`]
 /// 	* [`File::open`]
 /// * If `is_zip` is true:
 /// 	* Propagated up from [`extract_jvm_zip`].
@@ -113,8 +112,8 @@ pub fn extract_jvm<S: AsRef<Path>, P: AsRef<Path>>(
 
 fn extract_jvm_(archive: &Path, dest: &Path, is_zip: bool) -> Result<()> {
 	let dest: &Path = &dest
-		.canonicalize()
-		.context("Couldn't canonicalise destination path!")?;
+		.normalize_lexically()
+		.context("Couldn't normalise destination path!")?;
 	let input: File = File::open(archive).context("Couldn't open JVM archive!")?;
 	lock!(input);
 	let result: Result<()> = if is_zip {
@@ -184,13 +183,11 @@ pub fn extract_jvm_zip(dest: &Path, input: &File) -> Result<()> {
 		let decomp_size: u128 = archive.decompressed_size().unwrap_or(1);
 		let Ok(value): Result<u64, TryFromIntError> = u64::try_from(decomp_size) else {
 			cold_path();
-			log_err!("A `.zip` bigger than u64::MAX would be bigger than 16,384 pebibytes (PiB)!");
-			log_err!("At the time of writing, consumer-grade storage does not have such capacity!");
-			log_err!("Either integer underflow occurred, or Fuji somehow downloaded a zip bomb!");
-			log_err!("This is considered to be an extreme abnormality!");
-			log_err!("Fuji will now abort!");
-			flush_all!();
-			abort();
+			abnormal_abort!(
+				"A `.zip` bigger than u64::MAX would be bigger than 16,384 pebibytes (PiB)!",
+				"At the time of writing, consumer-grade storage does not have such capacity!",
+				"Either integer underflow occurred, or Fuji somehow downloaded a zip bomb!",
+			);
 		};
 		value
 	};
@@ -279,19 +276,24 @@ pub const fn is_executable(mode: u32) -> bool {
 pub fn extract_jvm_entry<F>(dest: &Path, path: &Path, mut unpack: F) -> Result<()>
 where
 	F: FnMut(&Path) -> Result<()>, {
+	let Ok(path): Result<PathBuf, NormalizeError> = path.normalize_lexically() else {
+		// This only occurs if parent escaping has occurred.
+		cold_path();
+		abnormal_abort!("Malicious or erroneous path detected inside JVM archive!");
+	};
 	let mut components: Components = path.components();
 	// https://stackoverflow.com/questions/845593/how-do-i-untar-a-subdirectory-into-the-current-directory
 	// --strip-components 1
 	components.next();
-	#[rustfmt::skip]
-	if components.clone().any(|comp: Component| comp == Component::ParentDir) {
-		bail!("Component::ParentDir found!");
-	};
 	#[cfg(target_os = "macos")]
 	// macOS .tar.gz is laid out differently.  it's a '.app'...
 	{
-		// skip "Contents"
-		components.next();
+		use std::path::Component;
+
+		// skip "Contents" (perform a sanity check to be safe)
+		if components.next() != Some(Component::Normal("Content".as_ref())) {
+			bail!("Unexpected directory found!  Expected 'Contents' directory!");
+		};
 		// only allow paths under "Home"
 		if components.next() != Some(Component::Normal("Home".as_ref())) {
 			return Ok(());
@@ -391,12 +393,14 @@ pub fn is_wayland() -> bool {
 #[cfg(target_os = "linux")]
 pub fn is_nvidia() -> bool {
 	use std::fs::{DirEntry, ReadDir, read_dir};
+	use std::io::Result;
 
-	let Ok(mut dir): std::io::Result<ReadDir> = read_dir("/proc/driver") else {
+	let Ok(mut entries): Result<ReadDir> = read_dir("/proc/driver") else {
+		cold_path();
 		return false;
 	};
 
-	dir.any(|entry: std::io::Result<DirEntry>| {
+	entries.any(|entry: Result<DirEntry>| {
 		entry.is_ok_and(|entry: DirEntry| {
 			entry
 				.file_name()

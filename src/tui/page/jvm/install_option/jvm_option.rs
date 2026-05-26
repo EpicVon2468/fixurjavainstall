@@ -5,7 +5,7 @@ use crate::install_option;
 use crate::jvm::jvm::JVM;
 use crate::tui::page::jvm::install_option::InstallOption;
 
-impl const ListEntry for JVM {
+const impl ListEntry for JVM {
 	fn name(&self) -> &'static str {
 		match *self {
 			Self::Auto => "Automatic",
@@ -23,7 +23,7 @@ pub struct JVMOption<'a> {
 
 install_option!(JVMOption, JVM);
 
-impl const InstallOption for JVMOption<'_> {
+const impl InstallOption for JVMOption<'_> {
 	fn tab_name(&self) -> &'static str {
 		"Build/Vendor"
 	}
