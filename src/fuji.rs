@@ -65,7 +65,8 @@
 	const_clone,
 	const_cmp,
 	likely_unlikely,
-	normalize_lexically
+	normalize_lexically,
+	panic_update_hook
 )]
 #![doc = include_str!("../README.md")]
 pub mod arch;
@@ -89,6 +90,7 @@ use std::env::{args_os, set_var, var};
 use std::ffi::OsString;
 use std::fs::{File, remove_file};
 use std::io::Write as _;
+use std::panic::{self, PanicHookInfo};
 use std::process::{abort, id as pid};
 
 use anyhow::{Context as _, Result};
@@ -198,7 +200,9 @@ macro_rules! fuji_version {
 /// ```
 pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 	let mut args: Vec<OsString> = vec!["fuji".into()];
-	args.extend_from_slice(extras);
+	if !extras.is_empty() {
+		args.extend_from_slice(extras);
+	};
 	args.extend_from_slice(&args_os().skip(1).collect::<Vec<OsString>>());
 	entrypoint(FujiArgs::parse_from(args))
 }
@@ -215,7 +219,7 @@ pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 ///
 /// Error value(s):
 ///
-/// * If [`FujiArgs::command`] is [`Some`]:
+/// * Always:
 /// 	* Propagated up from the following functions (if they are called):
 /// 		* [`cmd_manage`][`cmd_manage()`]
 /// 		* [`cmd_man`][`cmd_man()`]
@@ -226,8 +230,7 @@ pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 ///
 /// Return value(s):
 ///
-/// * If [`FujiArgs::command`] is [`None`]: [`Ok`]
-/// * If [`FujiArgs::command`] is [`Some`]:
+/// * Always:
 /// 	* Propagated up from the following functions (if they are called):
 /// 		* [`cmd_manage`][`cmd_manage()`]
 /// 		* [`cmd_man`][`cmd_man()`]
@@ -247,19 +250,18 @@ pub fn alias_entrypoint(extras: &[OsString]) -> Result<()> {
 pub fn entrypoint(mut args: FujiArgs) -> Result<()> {
 	flight_checks(&mut args)?;
 	let lock: File = claim_singleton_process()?;
-	let result: Result<()> = args.command.map_or_else(
-		|| Ok(()),
-		|command: FujiCmd| match command {
-			FujiCmd::Manage { .. } => cmd_manage(command),
-			FujiCmd::Manual { .. } => cmd_man(command),
-		},
-	);
+	let command: FujiCmd = args.command;
+	let result: Result<()> = match command {
+		FujiCmd::Manage { .. } => cmd_manage(command),
+		FujiCmd::Manual { .. } => cmd_man(command),
+	};
 	unclaim_singleton_process(lock)?;
 	result
 }
 
 #[allow(clippy::unnecessary_wraps)]
 fn flight_checks(args: &mut FujiArgs) -> Result<()> {
+	dbg!(&args.global_envs);
 	// SAFETY:
 	// Problem(s):
 	// - Mutation of `environ` can be thread unsafe.
@@ -267,13 +269,13 @@ fn flight_checks(args: &mut FujiArgs) -> Result<()> {
 	// - Fuji does not feature multi-threading involving reading or writing `environ`.
 	// - The new value is trusted input and known to be safe at compile-time.
 	unsafe {
-		if args.intention.unintentional {
-			args.intention.all_intentional = Some(false);
+		if args.global_envs.unintentional {
+			args.global_envs.all_intentional = Some(false);
 		};
-		if let Some(value) = args.intention.all_intentional {
+		if let Some(value) = args.global_envs.all_intentional {
 			// Not needed per se, but it's nice to synchronise state.
 			if !value {
-				args.intention.unintentional = true;
+				args.global_envs.unintentional = true;
 			};
 			// Later internal checks rely entirely upon this env var.
 			set_var("FUJI_ALL_INTENTIONAL", value.to_string());
@@ -392,11 +394,23 @@ fn claim_singleton_process() -> Result<File> {
 		File::create_new(LOCK).context(format!("Couldn't acquire lockfile {LOCK}!"))?;
 	lock!(file);
 	writeln!(file, "{}\n", pid()).context(format!("Couldn't write to lockfile {LOCK}!"))?;
+	file.sync_all().context("synchronise lock file")?;
+	panic::update_hook(fuji_cleanup_hook);
 	Ok(file)
+}
+
+fn fuji_cleanup_hook(
+	previous_hook: &(dyn Fn(&PanicHookInfo<'_>) + Send + Sync + 'static),
+	info: &PanicHookInfo<'_>,
+) {
+	// At least _try_ to clean up the lock file when a panic occurs.
+	let _ = remove_file(LOCK);
+	previous_hook(info);
 }
 
 fn unclaim_singleton_process(file: File) -> Result<()> {
 	unlock!(file);
+	file.sync_all().context("synchronise lock file")?;
 	drop(file);
 	remove_file(LOCK).context(format!("Couldn't remove lockfile {LOCK}!"))?;
 	Ok(())

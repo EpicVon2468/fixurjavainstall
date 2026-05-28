@@ -42,6 +42,7 @@ default = [
 dev = []
 interactive = [
 	"dep:dialoguer",
+	"non-tty",
 ]
 # https://docs.oracle.com/en/java/javase/26/core/restricted-methods.html
 # https://openjdk.org/jeps/472
@@ -51,6 +52,7 @@ openjdk-restricted = []
 tui = [
 	"dep:ratatui",
 	"dep:mavity-tui-components",
+	"non-tty",
 ]
 # Features which generally require a terminal emulator, as opposed to a raw tty
 non-tty = [

@@ -6,7 +6,6 @@ use clap::builder::PossibleValue;
 use clap::error::{ContextKind, ContextValue, ErrorKind};
 use clap::{Arg, Command, Error};
 
-// TODO: remove 'static requirement?
 pub trait FujiValueEnum: FromStr<Err = String> + 'static {
 	fn possible_values() -> impl Iterator<Item = PossibleValue> {
 		Self::variants().iter().filter_map(Self::to_possible_value)

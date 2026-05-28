@@ -54,10 +54,10 @@ pub fn cmd_install(op: Op) -> Result<()> {
 		);
 		ureq::get(uri)
 			.call()
-			.context("No JVM was available for the provided request!")?
+			.context("Failed to get JVM version for the provided request!")?
 			.into_body()
 			.read_json()
-			.context("Couldn't read JVM version information!")?
+			.context("Couldn't parse JVM version from URL endpoint!")?
 	};
 
 	let jvm_dir: PathBuf = Path::new(FUJI_DIR).join("jvm");

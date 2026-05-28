@@ -23,7 +23,7 @@ use which::which;
 use zip::ZipArchive;
 use zip::read::ZipFile;
 
-use crate::flag::{all_intentional, is_present};
+use crate::flag::flag__all_intentional;
 use crate::{abnormal_abort, io_failure, lock, unlock};
 
 /// Checks if the program `name` exists.  This is equivalent to `which(name).is_ok()`.
@@ -380,13 +380,19 @@ pub fn is_wayland() -> bool {
 	use std::env::var;
 	use std::hint::unlikely;
 
-	has_program("wayland-info")
-		// This variable seems to be unset when you su to root.
-		// But again, not impossible to be true, so leave it in.
-		|| unlikely(var("WAYLAND_DISPLAY").is_ok())
-		// When you su to root, XDG_SESSION_TYPE generally gets set to be `tty`.
-		// It's incredibly unlikely (but not impossible) that this would be true.
-		|| unlikely(var("XDG_SESSION_TYPE").is_ok_and(|var: String| unlikely(var == "wayland")))
+	use crate::flag::{FLAG__IS_ON_WAYLAND, flag__is_on_wayland, is_flag_present};
+
+	if is_flag_present(FLAG__IS_ON_WAYLAND) {
+		flag__is_on_wayland()
+	} else {
+		has_program("wayland-info")
+			// This variable seems to be unset when you su to root.
+			// However, this check will remain as a fallback in the rare case it isn't unset.
+			|| unlikely(var("WAYLAND_DISPLAY").is_ok())
+			// When you su to root, XDG_SESSION_TYPE generally gets set to be `tty`.
+			// It's incredibly unlikely (but not impossible) that this would be true.
+			|| unlikely(var("XDG_SESSION_TYPE").is_ok_and(|var: String| unlikely(var == "wayland")))
+	}
 }
 
 #[must_use]
@@ -431,9 +437,11 @@ pub fn require_archlinux_java() -> Result<()> {
 pub fn require_intentional(message: &str) -> Result<()> {
 	use dialoguer::Confirm;
 
+	use crate::flag::{FLAG__ALL_INTENTIONAL, is_flag_present};
+
 	// if FUJI_ALL_INTENTIONAL is set, it is the be-all end-all
-	let intentional: bool = if is_present("FUJI_ALL_INTENTIONAL") {
-		all_intentional()
+	let intentional: bool = if is_flag_present(FLAG__ALL_INTENTIONAL) {
+		flag__all_intentional()
 	} else {
 		Confirm::new()
 			.with_prompt("I know what I am doing:")
@@ -451,7 +459,7 @@ pub fn require_intentional(message: &str) -> Result<()> {
 
 #[cfg(not(feature = "interactive"))]
 pub fn require_intentional(message: &str) -> Result<()> {
-	let intentional: bool = all_intentional();
+	let intentional: bool = flag__all_intentional();
 
 	if !intentional {
 		bail!("User unintentionally {message}");

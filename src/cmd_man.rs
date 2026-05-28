@@ -1,4 +1,3 @@
-use std::ffi::OsStr;
 use std::fs::{File, create_dir_all};
 use std::io::Write;
 use std::iter::Filter;
@@ -6,6 +5,7 @@ use std::path::Path;
 
 use anyhow::{Context as _, Result};
 
+use clap::builder::StyledStr;
 use clap::{Arg, Command, CommandFactory as _};
 use clap_mangen::Man;
 use clap_mangen::roff::{Roff, bold, roman};
@@ -38,7 +38,7 @@ fn dump_manual(cmd: Command, out_dir: &Path) -> Result<()> {
 
 		let man: Man = Man::new(cmd.clone())
 			.section("8")
-			.date("2026-05-24")
+			.date("2026-05-28")
 			.source(concat!("fuji ", env!("CARGO_PKG_VERSION")))
 			// TODO: upstream
 			// All capitalised is the convention for commands
@@ -69,16 +69,17 @@ fn dump_manual(cmd: Command, out_dir: &Path) -> Result<()> {
 fn render0(cmd: &Command, man: &Man, out: &mut GzEncoder<File>) -> Result<()> {
 	man.render_title(out).context("title")?;
 	man.render_name_section(out).context("name")?;
+	// TODO: apply fix for hidden positional args still showing
 	man.render_synopsis_section(out).context("synopsis")?;
 	man.render_description_section(out).context("desc")?;
 	if cmd.get_arguments().any(|arg: &Arg| !arg.is_hide_set()) {
 		man.render_options_section(out).context("options")?;
-		if cmd
-			.get_arguments()
-			.any(|arg: &Arg| arg.get_env().is_some() && !arg.is_hide_env_set())
-		{
-			render_environment_section(cmd, out).context("environment")?;
-		};
+	};
+	if cmd
+		.get_arguments()
+		.any(|arg: &Arg| arg.get_env().is_some() && !arg.is_hide_env_set())
+	{
+		render_environment_section(cmd, out).context("environment")?;
 	};
 	Ok(())
 }
@@ -87,27 +88,35 @@ fn render0(cmd: &Command, man: &Man, out: &mut GzEncoder<File>) -> Result<()> {
 fn render_environment_section(cmd: &Command, out: &mut dyn Write) -> Result<()> {
 	let mut roff: Roff = Default::default();
 	roff.control("SH", ["ENVIRONMENT"]);
-	for arg in cmd.get_arguments().filter(|arg: &&Arg| {
-		arg.get_env().is_some() && !arg.is_hide_set() && !arg.is_hide_env_set()
-	}) {
-		let Some(env): Option<&OsStr> = arg.get_env() else {
-			unreachable!();
+	for arg in cmd.get_arguments() {
+		if arg.is_hide_env_set() {
+			continue;
 		};
-		let env: &str = &env.to_string_lossy();
+		let env: &str = match arg.get_env() {
+			Some(env) => &env.to_string_lossy(),
+			None => continue,
+		};
 		roff.control("TP", []);
 		roff.text([bold(env)]);
-		roff.text([
-			roman("If $"),
-			bold(env),
-			roman(
-				" is set, it will have the same effect as if it had been specified as the argument to the ",
-			),
-			bold(arg.get_long().map_or_else(
-				|| format!("-{}", cmd.get_short_flag().unwrap()),
-				|long_name: &str| format!("--{long_name}"),
-			)),
-			roman(" option."),
-		]);
+		if arg.is_hide_set() {
+			let help: &StyledStr = arg
+				.get_long_help()
+				.unwrap_or_else(|| arg.get_help().unwrap_or_default());
+			roff.text([roman(help.to_string())]);
+		} else {
+			roff.text([
+				roman("If $"),
+				bold(env),
+				roman(
+					" is set, it will have the same effect as if it had been specified as the argument to the ",
+				),
+				bold(arg.get_long().map_or_else(
+					|| format!("-{}", cmd.get_short_flag().unwrap()),
+					|long_name: &str| format!("--{long_name}"),
+				)),
+				roman(" option."),
+			]);
+		};
 	}
 	roff.to_writer(out).context("to_writer")
 }

@@ -15,18 +15,20 @@ use crate::fuji_version;
 	author,
 	name = "fuji",
 	display_name = "fuji",
-	propagate_version = true,
+	disable_help_subcommand = true,
+	// clap panics on Command::build if this is true...
+	// propagate_version = true,
 )]
 pub struct FujiArgs {
 	#[command(subcommand)]
-	pub command: Option<FujiCmd>,
+	pub command: FujiCmd,
 	#[command(flatten)]
-	pub intention: Intention,
+	pub global_envs: GlobalEnvs,
 }
 
-#[derive(Args)]
+#[derive(Args, Debug)]
 #[group(required = false, multiple = true)]
-pub struct Intention {
+pub struct GlobalEnvs {
 	/// Whether Fuji should consider all 'suspicious actions' to be intentional.
 	///
 	#[cfg_attr(
@@ -43,7 +45,7 @@ pub struct Intention {
 	#[arg(
 		short,
 		long,
-		env = "FUJI_ALL_INTENTIONAL",
+		env = crate::flag::FLAG__ALL_INTENTIONAL,
 		value_parser = BoolishValueParser::new(),
 		action = ArgAction::Set,
 		num_args = 0..=1,
@@ -55,13 +57,31 @@ pub struct Intention {
 	)]
 	pub all_intentional: Option<bool>,
 
-	/// Sets the `--all-intentional` option to false.
+	/// Sets the `--all-intentional` option to `false`.
+	///
+	/// This is a shorthand for `--all-intentional=false`.
 	#[arg(
 		short,
 		long,
 		value_parser = BoolishValueParser::new(),
 	)]
 	pub unintentional: bool,
+
+	/// Whether Fuji is on Wayland or not.
+	///
+	/// This option allows explicit specification of whether installations should be configured for Wayland or not.
+	///
+	/// Generally speaking, Fuji is able to detect Wayland fine on its own; However, setting this environment variable is a guaranteed way to override the selection, or avoid internal logic.
+	#[arg(
+		hide = true,
+		env = crate::flag::FLAG__IS_ON_WAYLAND,
+		value_parser = BoolishValueParser::new(),
+		action = ArgAction::Set,
+		num_args = 0..=1,
+		default_missing_value = "true",
+		require_equals = true,
+	)]
+	_is_on_wayland: Option<bool>,
 }
 
 #[derive_const(Subcommand)]

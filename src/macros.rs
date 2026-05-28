@@ -122,7 +122,8 @@ macro_rules! abnormal_abort {
 			Fuji will now abort!\
 		");
 		$crate::flush_all!();
-		std::process::abort();
+		// use panic so Fuji's hook is triggered and the lockfile is removed
+		panic!();
 	};
 }
 
@@ -155,6 +156,7 @@ macro_rules! value_enum_extensions {
 	($name:ty, $default:expr, match *self { $($variant:pat => $string:expr),* $(,)? } $(,)?) => {
 		#[automatically_derived]
 		impl const Default for $name {
+			#[inline(always)]
 			fn default() -> Self {
 				$default
 			}

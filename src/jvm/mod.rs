@@ -72,7 +72,15 @@ pub enum Op {
 		/// The features for the requested JVM.
 		///
 		/// Note that not every JVM may support every feature, and some JVMs may only offer features for certain versions or with incompatibilities with other features.
-		#[arg(short, long, action = ArgAction::Append, value_delimiter = ' ', num_args = 0..=1)]
+		#[arg(
+			short,
+			long,
+			// FIXME: Specifying the CLI arg overrides the environment variable.  In this specific case, it should merely append instead.
+			env = crate::flag::FLAG__JVM_FEATURES,
+			action = ArgAction::Append,
+			value_delimiter = ' ',
+			num_args = 0..=1,
+		)]
 		features: Vec<Feature>,
 
 		/// Show execution path without actually installing the JVM.

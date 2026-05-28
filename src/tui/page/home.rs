@@ -29,7 +29,7 @@ impl Page<FujiApp> for HomePage {
 			return (true, None);
 		};
 		if app.is_key_down(KeyCode::Enter) {
-			(true, Some(Box::new(JVMPage::default())))
+			(true, Some(Box::<JVMPage>::default()))
 		} else {
 			(false, None)
 		}
