@@ -1,6 +1,7 @@
 use std::cmp::min;
 use std::ffi::OsStr;
 use std::fs::{Metadata, ReadDir, remove_dir_all, remove_file};
+use std::hint::unreachable_unchecked;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 
@@ -74,7 +75,17 @@ fn link_(path: &Path, link_dir: &Path, install_method: &InstallMethod) -> Result
 				symlink_link(file, dest).context("Couldn't link with symlink!"),
 			InstallMethod::UpdateAlternatives => debian_link(&file, filename, dest)
 				.context("Couldn't link with update-alternatives!"),
-			_ => unreachable!(),
+			InstallMethod::Path => {
+				// SANITY: `InstallMethod::Path` is handled outside the loop, thus making it impossible for it to be a match case here.
+				// SAFETY:
+				// Problem(s):
+				// - `unreachable_unchecked()` is unsafe, and it is Undefined Behaviour for it to be reached.
+				// Excuse(s):
+				// - This statement cannot be reached.
+				unsafe {
+					unreachable_unchecked();
+				};
+			},
 		}?;
 		progress = min(progress + metadata.len(), max_len);
 		pb.set_position(progress);

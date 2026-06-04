@@ -11,7 +11,6 @@ pub trait FujiValueEnum: FromStr<Err = String> + 'static {
 		Self::variants().iter().filter_map(Self::to_possible_value)
 	}
 
-	#[allow(unreachable_patterns)]
 	fn to_possible_value(&self) -> Option<PossibleValue>;
 
 	#[must_use]
@@ -30,41 +29,54 @@ const impl<T: FujiValueEnum> Clone for FujiValueEnumParser<T> {
 
 impl<T: FujiValueEnum> FujiValueEnumParser<T> {
 	pub fn parse_impl(cmd: &Command, arg: Option<&Arg>, value: &OsStr) -> Result<T, Error> {
-		let result: Result<T, String> = Self::convert_case(arg, value.to_str().unwrap()).parse();
-		result.map_or_else(
-			|invalid_value: String| {
-				let mut error: Error = Error::new(ErrorKind::InvalidValue).with_cmd(cmd);
-				if let Some(argument) = arg {
-					error.insert(
-						ContextKind::InvalidArg,
-						ContextValue::String(argument.to_string()),
-					);
-				};
-				error.insert(
-					ContextKind::InvalidValue,
-					ContextValue::String(invalid_value),
-				);
-				error.insert(
-					ContextKind::ValidValue,
-					ContextValue::Strings(
+		convert_case(arg, &value.to_string_lossy())
+			.parse()
+			.map_or_else(
+				|invalid_value: String| {
+					Err(parser_error_info(
+						cmd,
+						arg,
+						invalid_value,
 						T::possible_values()
 							.map(|val: PossibleValue| val.get_name().to_owned())
 							.collect(),
-					),
-				);
-				Err(error)
-			},
-			Ok,
-		)
+					))
+				},
+				Ok,
+			)
 	}
+}
 
-	fn convert_case(arg: Option<&Arg>, value: &str) -> String {
-		if arg.is_some_and(Arg::is_ignore_case_set) {
-			value.to_lowercase()
-		} else {
-			value.to_string()
-		}
+fn convert_case(arg: Option<&Arg>, value: &str) -> String {
+	if arg.is_some_and(Arg::is_ignore_case_set) {
+		value.to_lowercase()
+	} else {
+		value.to_string()
 	}
+}
+
+fn parser_error_info(
+	cmd: &Command,
+	arg: Option<&Arg>,
+	invalid_value: String,
+	possible_values: Vec<String>,
+) -> Error {
+	let mut error: Error = Error::new(ErrorKind::InvalidValue).with_cmd(cmd);
+	if let Some(argument) = arg {
+		error.insert(
+			ContextKind::InvalidArg,
+			ContextValue::String(argument.to_string()),
+		);
+	};
+	error.insert(
+		ContextKind::InvalidValue,
+		ContextValue::String(invalid_value),
+	);
+	error.insert(
+		ContextKind::ValidValue,
+		ContextValue::Strings(possible_values),
+	);
+	error
 }
 
 #[macro_export]

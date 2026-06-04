@@ -182,6 +182,7 @@ pub fn extract_jvm_zip(dest: &Path, input: &File) -> Result<()> {
 	let max_len: u64 = {
 		let decomp_size: u128 = archive.decompressed_size().unwrap_or(1);
 		let Ok(value): Result<u64, TryFromIntError> = u64::try_from(decomp_size) else {
+			// SANITY: This is entirely unreasonable to occur.
 			cold_path();
 			abnormal_abort!(
 				"A `.zip` bigger than u64::MAX would be bigger than 16,384 pebibytes (PiB)!",
@@ -277,7 +278,9 @@ pub fn extract_jvm_entry<F>(dest: &Path, path: &Path, mut unpack: F) -> Result<(
 where
 	F: FnMut(&Path) -> Result<()>, {
 	let Ok(path): Result<PathBuf, NormalizeError> = path.normalize_lexically() else {
-		// This only occurs if parent escaping has occurred.
+		// SANITY:
+		// Generally speaking, it should be considered reasonable to assume that any archives Fuji is untaring are trusted, safe and proper.
+		// However, it isn't impossible for this to not be the case.  But it is exceptionally rare.
 		cold_path();
 		abnormal_abort!("Malicious or erroneous path detected inside JVM archive!");
 	};
@@ -386,11 +389,13 @@ pub fn is_wayland() -> bool {
 		flag__is_on_wayland()
 	} else {
 		has_program("wayland-info")
-			// This variable seems to be unset when you su to root.
-			// However, this check will remain as a fallback in the rare case it isn't unset.
+			// SANITY:
+			// This variable seems to (usually) be unset when you su to root.
+			// The variable isn't guaranteed to be unset, but it is unlikely for it to be set.
 			|| unlikely(var("WAYLAND_DISPLAY").is_ok())
+			// SANITY:
 			// When you su to root, XDG_SESSION_TYPE generally gets set to be `tty`.
-			// It's incredibly unlikely (but not impossible) that this would be true.
+			// It isn't impossible for the variable to be something other than `tty`, but it is unlikely to occur.
 			|| unlikely(var("XDG_SESSION_TYPE").is_ok_and(|var: String| unlikely(var == "wayland")))
 	}
 }
@@ -402,6 +407,9 @@ pub fn is_nvidia() -> bool {
 	use std::io::Result;
 
 	let Ok(mut entries): Result<ReadDir> = read_dir("/proc/driver") else {
+		// SANITY:
+		// Fuji is executed as root.  The `/proc/driver` path should generally be available without restriction.
+		// It isn't impossible for `/proc/driver` to be unreadable, but it is unlikely to occur.
 		cold_path();
 		return false;
 	};

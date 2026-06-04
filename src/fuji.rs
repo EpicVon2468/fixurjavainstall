@@ -342,9 +342,10 @@ fn flight_checks(args: &mut FujiArgs) -> Result<()> {
 			///
 			/// # See Also
 			///
-			/// [getuid(2)], [getresuid(2)], [setreuid(2)], [setuid(2)], [credentials(7)]
+			/// [getuid(2)], [getresuid(2)], [setreuid(2)], [setuid(2)], [credentials(7)], [POSIX.1]
 			///
-			/// [POSIX.1-2024]: https://pubs.opengroup.org/onlinepubs/9799919799/functions/geteuid.html
+			/// [POSIX.1-2024]: https://pubs.opengroup.org/onlinepubs/9799919799.2024edition/functions/geteuid.html
+			/// [POSIX.1]: https://pubs.opengroup.org/onlinepubs/9799919799/functions/geteuid.html
 			/// [getuid(2)]: https://man7.org/linux/man-pages/man2/getuid.2.html
 			/// [getresuid(2)]: https://man7.org/linux/man-pages/man2/getresuid.2.html
 			/// [setreuid(2)]: https://man7.org/linux/man-pages/man2/setreuid.2.html

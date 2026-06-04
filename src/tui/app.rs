@@ -15,8 +15,6 @@ use crate::tui::component::help::HelpSection;
 use crate::tui::page::home::HomePage;
 
 pub struct FujiApp {
-	// TODO: mark this field as unsafe via https://github.com/rust-lang/rust/issues/132922
-	//  RustRover currently throws errors around parsing since it doesn't know about the feature, so can't use it yet...
 	page: *mut BoxPage<Self>,
 	event: Option<KeyCode>,
 	prev_event: Option<KeyCode>,

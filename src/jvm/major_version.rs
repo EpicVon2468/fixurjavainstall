@@ -8,7 +8,6 @@ use crate::fuji_value_enum::FujiValueEnum;
 use crate::{display, fuji_value_enum_parser};
 
 /// The major version of a JVM.
-#[non_exhaustive]
 #[derive_const(Clone, PartialEq, Eq, Default)]
 pub enum MajorVersion {
 	/// Some arbitrary numeric version.
@@ -21,7 +20,6 @@ pub enum MajorVersion {
 }
 
 impl FujiValueEnum for MajorVersion {
-	#[allow(unreachable_patterns)]
 	fn to_possible_value(&self) -> Option<PossibleValue> {
 		match *self {
 			Self::Number(_) => PossibleValue::new("[0..4_294_967_295]")
@@ -33,7 +31,6 @@ impl FujiValueEnum for MajorVersion {
 			Self::LTS => PossibleValue::new("lts")
 				.help("The latest Long Term Support version")
 				.into(),
-			_ => None,
 		}
 	}
 

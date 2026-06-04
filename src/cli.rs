@@ -74,6 +74,7 @@ pub struct GlobalEnvs {
 	/// Generally speaking, Fuji is able to detect Wayland fine on its own; However, setting this environment variable is a guaranteed way to override the selection, or avoid internal logic.
 	#[arg(
 		hide = true,
+		hide_possible_values = true,
 		env = crate::flag::FLAG__IS_ON_WAYLAND,
 		value_parser = BoolishValueParser::new(),
 		action = ArgAction::Set,
